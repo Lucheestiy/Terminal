@@ -1,0 +1,247 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1e293b;
+    color: #22d3ee;
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+    body {
+        height: 100dvh;
+    }
+}
+
+.terminal-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 0;
+}
+
+.header {
+    border-bottom: 1px solid rgba(34, 211, 238, 0.4);
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    font-weight: normal;
+    letter-spacing: 2px;
+}
+
+.header .subtitle {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+.vision-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(34, 211, 238, 0.1);
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    border-radius: 6px;
+    color: #22d3ee;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.vision-btn:hover {
+    background: rgba(34, 211, 238, 0.15);
+    border-color: #22d3ee;
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.25);
+    transform: translateY(-1px);
+}
+
+.vision-icon {
+    font-size: 1rem;
+}
+
+.vision-text {
+    font-weight: 500;
+}
+
+.commands-list {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px dashed rgba(34, 211, 238, 0.4);
+    font-size: 0.85rem;
+}
+
+.commands-list span {
+    margin-right: 15px;
+}
+
+.commands-list .cmd {
+    color: #1e293b;
+    background: #22d3ee;
+    padding: 2px 8px;
+    border-radius: 3px;
+}
+
+.terminal-window {
+    flex: 1;
+    background: #0f172a;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.output-area {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+}
+
+.output-line {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.output-line.system {
+    color: #87ceeb;
+}
+
+.output-line.error {
+    color: #ff4444;
+}
+
+.output-line.success {
+    color: #34d399;
+}
+
+.input-area {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    background: #1e293b;
+    border-top: 1px solid rgba(34, 211, 238, 0.25);
+}
+
+.prompt {
+    color: #22d3ee;
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+#command-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+}
+
+#command-input::placeholder {
+    color: #444;
+}
+
+.status {
+    padding: 8px 15px;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    background: #1e293b;
+    border-top: 1px solid #334155;
+}
+
+.status .connected {
+    color: #34d399;
+}
+
+.status .disconnected {
+    color: #ff4444;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #22d3ee;
+}
+
+/* Blinking cursor animation */
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+.cursor {
+    display: inline-block;
+    width: 8px;
+    height: 1em;
+    background: #22d3ee;
+    animation: blink 1s infinite;
+    vertical-align: text-bottom;
+}
+
+@media (max-width: 720px) {
+    body {
+        overflow: auto;
+    }
+
+    .terminal-container {
+        padding: 12px;
+    }
+
+    .header {
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .vision-btn {
+        padding: 10px 14px;
+    }
+
+    .output-area {
+        padding: 12px;
+    }
+
+    #command-input {
+        font-size: 16px; /* Prevent iOS zoom on focus */
+    }
+}

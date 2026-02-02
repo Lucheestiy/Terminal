@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Command Center</title>
+    <link rel="stylesheet" href="/static/style.css?v=3">
+    <link rel="stylesheet" href="/static/vision.css?v=4">
+</head>
+<body>
+    <div class="command-center">
+        <!-- Header with Navigation -->
+        <header class="cc-header">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">&#9672;</span>
+                    <span class="logo-text">VISION</span>
+                </div>
+                <nav class="nav-tabs">
+                    <a href="/" class="nav-tab">Classic</a>
+                    <a href="/vision" class="nav-tab active">Command Center</a>
+                </nav>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator" id="system-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">System Online</span>
+                </div>
+                <div class="time-display" id="header-time">--:--:--</div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="cc-main">
+            <!-- Left Panel: Quick Actions -->
+            <section class="panel quick-actions">
+                <h2 class="panel-title">
+                    <span class="title-icon">&#9889;</span>
+                    Quick Actions
+                </h2>
+                
+                <!-- Core Sites -->
+                <h3 class="action-category">Core Sites</h3>
+                <div class="action-grid">
+                    <button class="action-card" data-cmd="srbiz" onclick="runCommand('srbiz')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbiz</span>
+                            <span class="action-desc">Rebuild Business</span>
+                        </div>
+                        <div class="action-status" id="status-srbiz">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srbizinfo" onclick="runCommand('srbizinfo')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbizinfo</span>
+                            <span class="action-desc">Rebuild Info</span>
+                        </div>
+                        <div class="action-status" id="status-srbizinfo">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srbots" onclick="runCommand('srbots')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                                <circle cx="12" cy="5" r="2"/>
+                                <path d="M12 7v4"/>
+                                <line x1="8" y1="16" x2="8" y2="16"/>
+                                <line x1="16" y1="16" x2="16" y2="16"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbots</span>
+                            <span class="action-desc">Rebuild Bots</span>
+                        </div>
+                        <div class="action-status" id="status-srbots">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srbiznes" onclick="runCommand('srbiznes')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbiznes</span>
+                            <span class="action-desc">Rebuild Biznes</span>
+                        </div>
+                        <div class="action-status" id="status-srbiznes">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Business Cluster -->
+                <h3 class="action-category">Business Cluster</h3>
+                <div class="action-grid">
+                    <button class="action-card" data-cmd="srbiz2" onclick="runCommand('srbiz2')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbiz2</span>
+                            <span class="action-desc">Rebuild Biznes2</span>
+                        </div>
+                        <div class="action-status" id="status-srbiz2">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srbiz3" onclick="runCommand('srbiz3')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbiz3</span>
+                            <span class="action-desc">Rebuild Biznes3</span>
+                        </div>
+                        <div class="action-status" id="status-srbiz3">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srbiz4" onclick="runCommand('srbiz4')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbiz4</span>
+                            <span class="action-desc">Rebuild Biznes4</span>
+                        </div>
+                        <div class="action-status" id="status-srbiz4">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srbiznesgroop" onclick="runCommand('srbiznesgroop')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srbiznesgroop</span>
+                            <span class="action-desc">Rebuild Groop</span>
+                        </div>
+                        <div class="action-status" id="status-srbiznesgroop">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- AI & Tools -->
+                <h3 class="action-category">AI & Tools</h3>
+                <div class="action-grid">
+                    <button class="action-card" data-cmd="srai" onclick="runCommand('srai')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2a10 10 0 1 0 10 10H12V2z"/>
+                                <path d="M12 2a10 10 0 0 1 10 10"/>
+                                <path d="M12 12L2.5 8.5"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srai</span>
+                            <span class="action-desc">Rebuild AI</span>
+                        </div>
+                        <div class="action-status" id="status-srai">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srclaude" onclick="runCommand('srclaude')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srclaude</span>
+                            <span class="action-desc">Rebuild Claude</span>
+                        </div>
+                        <div class="action-status" id="status-srclaude">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srcodex" onclick="runCommand('srcodex')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="16 18 22 12 16 6"/>
+                                <polyline points="8 6 2 12 8 18"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srcodex</span>
+                            <span class="action-desc">Rebuild Codex</span>
+                        </div>
+                        <div class="action-status" id="status-srcodex">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srstats" onclick="runCommand('srstats')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10"/>
+                                <line x1="12" y1="20" x2="12" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srstats</span>
+                            <span class="action-desc">Rebuild Stats</span>
+                        </div>
+                        <div class="action-status" id="status-srstats">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Infrastructure -->
+                <h3 class="action-category">Infrastructure</h3>
+                <div class="action-grid">
+                    <button class="action-card" data-cmd="srfast" onclick="runCommand('srfast')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srfast</span>
+                            <span class="action-desc">Rebuild Fast</span>
+                        </div>
+                        <div class="action-status" id="status-srfast">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srportainer" onclick="runCommand('srportainer')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"/>
+                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"/>
+                                <line x1="6" y1="6" x2="6.01" y2="6"/>
+                                <line x1="6" y1="18" x2="6.01" y2="18"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srportainer</span>
+                            <span class="action-desc">Rebuild Portainer</span>
+                        </div>
+                        <div class="action-status" id="status-srportainer">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srverify" onclick="runCommand('srverify')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <polyline points="9 12 12 15 16 10"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srverify</span>
+                            <span class="action-desc">Rebuild Verify</span>
+                        </div>
+                        <div class="action-status" id="status-srverify">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srverify2" onclick="runCommand('srverify2')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <polyline points="9 12 12 15 16 10"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srverify2</span>
+                            <span class="action-desc">Rebuild Verify2</span>
+                        </div>
+                        <div class="action-status" id="status-srverify2">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Content & Media -->
+                <h3 class="action-category">Content & Media</h3>
+                <div class="action-grid">
+                    <button class="action-card" data-cmd="srkarta" onclick="runCommand('srkarta')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+                                <line x1="8" y1="2" x2="8" y2="18"/>
+                                <line x1="16" y1="6" x2="16" y2="22"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srkarta</span>
+                            <span class="action-desc">Rebuild Karta</span>
+                        </div>
+                        <div class="action-status" id="status-srkarta">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srshow" onclick="runCommand('srshow')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srshow</span>
+                            <span class="action-desc">Rebuild Show</span>
+                        </div>
+                        <div class="action-status" id="status-srshow">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srshare" onclick="runCommand('srshare')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="18" cy="5" r="3"/>
+                                <circle cx="6" cy="12" r="3"/>
+                                <circle cx="18" cy="19" r="3"/>
+                                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srshare</span>
+                            <span class="action-desc">Rebuild Share</span>
+                        </div>
+                        <div class="action-status" id="status-srshare">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srdropbox" onclick="runCommand('srdropbox')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2l-5.5 4 5.5 4 5.5-4-5.5-4z"/>
+                                <path d="M6.5 6l-5.5 4 5.5 4 5.5-4-5.5-4z"/>
+                                <path d="M17.5 6l-5.5 4 5.5 4 5.5-4-5.5-4z"/>
+                                <path d="M12 14l-5.5 4 5.5 4 5.5-4-5.5-4z"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srdropbox</span>
+                            <span class="action-desc">Rebuild Dropbox</span>
+                        </div>
+                        <div class="action-status" id="status-srdropbox">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Layout & Structure -->
+                <h3 class="action-category">Layout & Structure</h3>
+                <div class="action-grid">
+                    <button class="action-card" data-cmd="srlayout" onclick="runCommand('srlayout')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <line x1="3" y1="9" x2="21" y2="9"/>
+                                <line x1="9" y1="21" x2="9" y2="9"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srlayout</span>
+                            <span class="action-desc">Rebuild Layout</span>
+                        </div>
+                        <div class="action-status" id="status-srlayout">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srstructure" onclick="runCommand('srstructure')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srstructure</span>
+                            <span class="action-desc">Rebuild Structure</span>
+                        </div>
+                        <div class="action-status" id="status-srstructure">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="sralena" onclick="runCommand('sralena')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">sralena</span>
+                            <span class="action-desc">Rebuild Alena</span>
+                        </div>
+                        <div class="action-status" id="status-sralena">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+
+                    <button class="action-card" data-cmd="srx" onclick="runCommand('srx')">
+                        <div class="action-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <span class="action-name">srx</span>
+                            <span class="action-desc">Rebuild X</span>
+                        </div>
+                        <div class="action-status" id="status-srx">
+                            <span class="idle">Ready</span>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Center Panel: Terminal -->
+            <section class="panel terminal-panel">
+                <div class="terminal-header">
+                    <h2 class="panel-title">
+                        <span class="title-icon">&#8984;</span>
+                        Terminal Output
+                    </h2>
+                    <div class="terminal-controls">
+                        <button class="ctrl-btn" onclick="clearOutput()" title="Clear">&#8858;</button>
+                        <button class="ctrl-btn" onclick="toggleFullscreen()" title="Fullscreen">&#9974;</button>
+                    </div>
+                </div>
+                <div class="terminal-window cc-terminal" id="terminal-window">
+                    <div class="output-area" id="output">
+                        <div class="welcome-message">
+                            <div class="ascii-art">
+&#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+&#9553;     VISION COMMAND CENTER v2.0                               &#9553;
+&#9553;     "The future is not inherited, it is designed"           &#9553;
+&#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;
+                            </div>
+                            <div class="welcome-text">
+                                <p>Welcome to the <strong>Vision Command Center</strong>.</p>
+                                <p>Select a quick action above or type a command below.</p>
+                                <p class="hint">Connected and ready for input...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-area">
+                        <span class="prompt">$</span>
+                        <input type="text" id="command-input" placeholder="Enter command (e.g., srbiz, srai, srfast)..." autocomplete="off">
+                        <button class="send-btn" onclick="sendInputCommand()">&#9166;</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: System Info -->
+            <section class="panel system-panel">
+                <h2 class="panel-title">
+                    <span class="title-icon">&#9673;</span>
+                    System Status
+                </h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-label">Connection</span>
+                        <span class="stat-value" id="conn-status">--</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Uptime</span>
+                        <span class="stat-value" id="uptime">--:--:--</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-label">Last Run</span>
+                        <span class="stat-value" id="last-run">Never</span>
+                    </div>
+                </div>
+
+                <div class="activity-log">
+                    <h3 class="subsection-title">Recent Activity</h3>
+                    <div class="log-container" id="activity-log">
+                        <div class="log-entry empty">No activity yet</div>
+                    </div>
+                </div>
+
+                <div class="command-reference">
+                    <h3 class="subsection-title">Available Commands</h3>
+                    <div class="ref-list">
+                        <div class="ref-item"><code>srbiz</code><span>Rebuild business</span></div>
+                        <div class="ref-item"><code>srbizinfo</code><span>Rebuild info</span></div>
+                        <div class="ref-item"><code>srbots</code><span>Rebuild bots</span></div>
+                        <div class="ref-item"><code>srbiznes</code><span>Rebuild biznes</span></div>
+                        <div class="ref-item"><code>srbiz2</code><span>Rebuild biznes2</span></div>
+                        <div class="ref-item"><code>srbiz3</code><span>Rebuild biznes3</span></div>
+                        <div class="ref-item"><code>srbiz4</code><span>Rebuild biznes4</span></div>
+                        <div class="ref-item"><code>srbiznesgroop</code><span>Rebuild groop</span></div>
+                        <div class="ref-item"><code>srai</code><span>Rebuild AI</span></div>
+                        <div class="ref-item"><code>srclaude</code><span>Rebuild Claude</span></div>
+                        <div class="ref-item"><code>srcodex</code><span>Rebuild Codex</span></div>
+                        <div class="ref-item"><code>srstats</code><span>Rebuild Stats</span></div>
+                        <div class="ref-item"><code>srfast</code><span>Rebuild Fast</span></div>
+                        <div class="ref-item"><code>srportainer</code><span>Rebuild Portainer</span></div>
+                        <div class="ref-item"><code>srverify</code><span>Rebuild Verify</span></div>
+                        <div class="ref-item"><code>srverify2</code><span>Rebuild Verify2</span></div>
+                        <div class="ref-item"><code>srkarta</code><span>Rebuild Karta</span></div>
+                        <div class="ref-item"><code>srshow</code><span>Rebuild Show</span></div>
+                        <div class="ref-item"><code>srshare</code><span>Rebuild Share</span></div>
+                        <div class="ref-item"><code>srdropbox</code><span>Rebuild Dropbox</span></div>
+                        <div class="ref-item"><code>srlayout</code><span>Rebuild Layout</span></div>
+                        <div class="ref-item"><code>srstructure</code><span>Rebuild Structure</span></div>
+                        <div class="ref-item"><code>sralena</code><span>Rebuild Alena</span></div>
+                        <div class="ref-item"><code>srx</code><span>Rebuild X</span></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="cc-footer">
+            <div class="footer-left">
+                <span class="footer-text">Vision Interface by Kimi</span>
+            </div>
+            <div class="footer-center">
+                <span class="keyboard-hint">
+                    <kbd>Ctrl</kbd> + <kbd>K</kbd> to focus &#8226; <kbd>Enter</kbd> to execute
+                </span>
+            </div>
+            <div class="footer-right">
+                <span class="version">v2.1.0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal-overlay" id="progress-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Executing Command</span>
+                <button class="modal-close" onclick="closeModal()">&#215;</button>
+            </div>
+            <div class="modal-body">
+                <div class="progress-spinner"></div>
+                <div class="progress-info">
+                    <span class="progress-cmd" id="modal-cmd">--</span>
+                    <span class="progress-text" id="modal-text">Connecting...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WebSocket and state management
+        let ws = null;
+        let executing = false;
+        let progressLine = null;
+        let pingInterval = null;
+        let sessionStart = Date.now();
+        let lastCommand = null;
+
+        let followOutput = true;
+        let pendingText = '';
+
+        const output = document.getElementById('output');
+        const input = document.getElementById('command-input');
+        const connStatus = document.getElementById('conn-status');
+        const systemStatus = document.getElementById('system-status');
+        const activityLog = document.getElementById('activity-log');
+
+        const isTouch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        const STORAGE = {
+            runId: 'fastTerminal.runId',
+            offset: 'fastTerminal.offset',
+            active: 'fastTerminal.active'
+        };
+
+        let currentRunId = localStorage.getItem(STORAGE.runId) || '';
+        let currentOffset = parseInt(localStorage.getItem(STORAGE.offset) || '0', 10) || 0;
+        let runActive = localStorage.getItem(STORAGE.active) === '1';
+
+        // Valid commands list
+        const VALID_COMMANDS = [
+            'srbiz', 'srbizinfo', 'srbots', 'srbiznes', 'srbiz2', 'srbiz3', 'srbiz4', 'srbiznesgroop',
+            'srai', 'srclaude', 'srcodex', 'srstats',
+            'srfast', 'srportainer', 'srverify', 'srverify2',
+            'srkarta', 'srshow', 'srshare', 'srdropbox',
+            'srlayout', 'srstructure', 'sralena', 'srx'
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            connect();
+            updateTime();
+            updateUptime();
+            setInterval(updateTime, 1000);
+            setInterval(updateUptime, 1000);
+            if (!isTouch) input.focus();
+        });
+
+        // Time display
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('header-time').textContent =
+                now.toLocaleTimeString('en-US', { hour12: false });
+        }
+
+        // Uptime counter
+        function updateUptime() {
+            const diff = Math.floor((Date.now() - sessionStart) / 1000);
+            const hours = Math.floor(diff / 3600).toString().padStart(2, '0');
+            const mins = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            const secs = (diff % 60).toString().padStart(2, '0');
+            document.getElementById('uptime').textContent = `${hours}:${mins}:${secs}`;
+        }
+
+        // WebSocket connection
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+            ws.onopen = () => {
+                connStatus.textContent = 'Connected';
+                connStatus.className = 'stat-value connected';
+                systemStatus.className = 'status-indicator online';
+                systemStatus.querySelector('.status-text').textContent = 'System Online';
+
+                pingInterval = setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send('ping');
+                    }
+                }, 15000);
+
+                // Resync last run if we have it (use 0 when page is fresh so we display all data).
+                if (currentRunId) {
+                    const looksFresh = output.children.length === 0 || !!output.querySelector('.welcome-message');
+                    const fromOffset = looksFresh ? 0 : currentOffset;
+                    try {
+                        ws.send(JSON.stringify({ type: 'resume', runId: currentRunId, fromOffset }));
+                        addLogEntry(`Resync: ${currentRunId} from ${fromOffset}`, 'info');
+                        executing = runActive;
+                        input.disabled = runActive;
+                    } catch (e) {
+                        console.error('Resume failed:', e);
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                connStatus.textContent = 'Disconnected';
+                connStatus.className = 'stat-value disconnected';
+                systemStatus.className = 'status-indicator offline';
+                systemStatus.querySelector('.status-text').textContent = 'Reconnecting...';
+
+                if (pingInterval) {
+                    clearInterval(pingInterval);
+                    pingInterval = null;
+                }
+
+                addLogEntry('Connection lost. Reconnecting...', 'error');
+                setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            ws.onmessage = (event) => {
+                const text = event.data;
+                if (text === 'pong') return;
+
+                if (text && text[0] === '{') {
+                    try {
+                        const msg = JSON.parse(text);
+                        handleServerMessage(msg);
+                        return;
+                    } catch (e) {
+                        // fall through
+                    }
+                }
+
+                handleOutputChunk(text);
+            };
+        }
+
+        function handleServerMessage(msg) {
+            if (!msg || !msg.type) return;
+
+            if (msg.type === 'error') {
+                addOutputLine(`Error: ${msg.message || 'Unknown error'}`, 'error');
+                executing = false;
+                input.disabled = false;
+                runActive = false;
+                localStorage.setItem(STORAGE.active, '0');
+                setCommandStatus(lastCommand, 'error');
+                closeModal();
+                return;
+            }
+
+            if (msg.type === 'run_started') {
+                currentRunId = msg.runId || currentRunId;
+                currentOffset = 0;
+                runActive = true;
+                localStorage.setItem(STORAGE.runId, currentRunId);
+                localStorage.setItem(STORAGE.offset, String(currentOffset));
+                localStorage.setItem(STORAGE.active, '1');
+                executing = true;
+                input.disabled = true;
+                if (isTouch) input.blur();
+                return;
+            }
+
+            if (msg.type === 'run_status') {
+                if (msg.runId) {
+                    currentRunId = msg.runId;
+                    localStorage.setItem(STORAGE.runId, currentRunId);
+                }
+                if (typeof msg.offset === 'number') {
+                    currentOffset = msg.offset;
+                    localStorage.setItem(STORAGE.offset, String(currentOffset));
+                }
+                if (typeof msg.done === 'boolean') {
+                    runActive = !msg.done;
+                    localStorage.setItem(STORAGE.active, runActive ? '1' : '0');
+                    executing = runActive;
+                    input.disabled = runActive;
+                }
+                return;
+            }
+
+            if (msg.type === 'output') {
+                if (msg.runId) {
+                    currentRunId = msg.runId;
+                    localStorage.setItem(STORAGE.runId, currentRunId);
+                }
+                if (typeof msg.offset === 'number') {
+                    currentOffset = msg.offset;
+                    localStorage.setItem(STORAGE.offset, String(currentOffset));
+                }
+                handleOutputChunk(msg.text || '');
+                return;
+            }
+
+            if (msg.type === 'run_finished') {
+                const code = msg.exitCode;
+                runActive = false;
+                executing = false;
+                input.disabled = false;
+                localStorage.setItem(STORAGE.active, '0');
+
+                const ok = code === 0;
+                setCommandStatus(lastCommand, ok ? 'success' : 'error');
+                addLogEntry(`${ok ? 'Completed' : 'Failed'}: ${lastCommand} (exit ${code ?? '?'})`, ok ? 'success' : 'error');
+                document.getElementById('last-run').textContent = new Date().toLocaleTimeString();
+                closeModal();
+                if (!isTouch) input.focus();
+                return;
+            }
+        }
+
+        function isNearBottom() {
+            return (output.scrollHeight - output.scrollTop - output.clientHeight) < 40;
+        }
+
+        function scrollToBottom() {
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Handle output chunks (may arrive split)
+        function handleOutputChunk(chunk) {
+            if (!chunk) return;
+
+            const modalText = document.getElementById('modal-text');
+            const shouldFollow = followOutput || isNearBottom();
+
+            pendingText += chunk;
+            pendingText = pendingText.replace(/\r/g, '\n');
+            const lines = pendingText.split('\n');
+            pendingText = lines.pop() || '';
+
+            for (const rawLine of lines) {
+                const line = rawLine;
+
+                // Progress-line pattern: update existing line instead of spamming.
+                if (line.includes('Sending build context to Docker daemon')) {
+                    if (!progressLine) {
+                        progressLine = document.createElement('div');
+                        progressLine.className = 'output-line';
+                        output.appendChild(progressLine);
+                    }
+                    progressLine.textContent = line.trim();
+                    if (modalText) modalText.textContent = line.trim().substring(0, 60);
+                    continue;
+                }
+
+                progressLine = null;
+                addOutputLine(line);
+
+                // Update modal with latest non-empty line (truncated)
+                if (modalText && line.trim() && !line.includes('==>')) {
+                    modalText.textContent = line.trim().substring(0, 60) + (line.length > 60 ? '...' : '');
+                }
+            }
+
+            if (shouldFollow) scrollToBottom();
+        }
+
+        // Add line to output
+        function addOutputLine(text, type = '') {
+            const welcome = output.querySelector('.welcome-message');
+            if (welcome) welcome.remove();
+
+            const line = document.createElement('div');
+            line.className = 'output-line ' + type;
+            line.textContent = text;
+            output.appendChild(line);
+            if (followOutput || isNearBottom()) {
+                scrollToBottom();
+            }
+            while (output.children.length > 5000) {
+                output.removeChild(output.firstChild);
+            }
+        }
+
+        // Run command from button
+        function runCommand(cmd) {
+            if (executing) return;
+            lastCommand = cmd;
+            setCommandStatus(cmd, 'running');
+            addLogEntry(`Started: ${cmd}`, 'info');
+            
+            addOutputLine(`$ ${cmd}`, 'system');
+            
+            executing = true;
+            input.disabled = true;
+            followOutput = true;
+            if (isTouch) input.blur();
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addOutputLine('Not connected', 'error');
+                setCommandStatus(cmd, 'error');
+                executing = false;
+                input.disabled = false;
+                closeModal();
+                return;
+            }
+
+            runActive = true;
+            localStorage.setItem(STORAGE.active, '1');
+            showModal(cmd);
+            const modalText = document.getElementById('modal-text');
+            if (modalText) modalText.textContent = 'Starting...';
+
+            ws.send(JSON.stringify({ type: 'run', cmd }));
+        }
+
+        // Send command from input
+        function sendInputCommand() {
+            const cmd = input.value.trim();
+            if (!cmd || executing) return;
+            
+            if (!VALID_COMMANDS.includes(cmd)) {
+                addOutputLine(`Unknown command: ${cmd}`, 'error');
+                input.value = '';
+                return;
+            }
+            
+            input.value = '';
+            runCommand(cmd);
+        }
+
+        // Set command status on card
+        function setCommandStatus(cmd, status) {
+            const statusEl = document.getElementById(`status-${cmd}`);
+            if (!statusEl) return;
+            
+            const card = document.querySelector(`[data-cmd="${cmd}"]`);
+            
+            statusEl.className = 'action-status';
+            card.classList.remove('running', 'success', 'error');
+            
+            if (status === 'running') {
+                statusEl.innerHTML = '<span class="running">Running...</span>';
+                card.classList.add('running');
+            } else if (status === 'success') {
+                statusEl.innerHTML = '<span class="success">Done &#10003;</span>';
+                card.classList.add('success');
+                setTimeout(() => {
+                    statusEl.innerHTML = '<span class="idle">Ready</span>';
+                    card.classList.remove('success');
+                }, 3000);
+            } else if (status === 'error') {
+                statusEl.innerHTML = '<span class="error">Failed &#10007;</span>';
+                card.classList.add('error');
+                setTimeout(() => {
+                    statusEl.innerHTML = '<span class="idle">Ready</span>';
+                    card.classList.remove('error');
+                }, 3000);
+            }
+        }
+
+        // Add activity log entry
+        function addLogEntry(message, type) {
+            const emptyEntry = activityLog.querySelector('.empty');
+            if (emptyEntry) {
+                emptyEntry.remove();
+            }
+            
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="log-time">${time}</span> <span class="log-msg">${message}</span>`;
+            
+            activityLog.insertBefore(entry, activityLog.firstChild);
+            
+            // Keep only last 10 entries
+            while (activityLog.children.length > 10) {
+                activityLog.removeChild(activityLog.lastChild);
+            }
+        }
+
+        // Modal functions
+        function showModal(cmd) {
+            document.getElementById('modal-cmd').textContent = cmd;
+            document.getElementById('modal-text').textContent = 'Running...';
+            document.getElementById('progress-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('progress-modal').style.display = 'none';
+        }
+
+        // Terminal controls
+        function clearOutput() {
+            output.innerHTML = '';
+            pendingText = '';
+            progressLine = null;
+            followOutput = true;
+        }
+
+        function toggleFullscreen() {
+            const terminal = document.getElementById('terminal-window');
+            if (!document.fullscreenElement) {
+                terminal.requestFullscreen().catch(err => {
+                    console.error('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Event listeners
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendInputCommand();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K to focus input
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                input.focus();
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (isTouch) return;
+            if (!executing && e.target.closest('.input-area')) {
+                input.focus();
+            }
+        });
+
+        output.addEventListener('scroll', () => {
+            followOutput = isNearBottom();
+        });
+    </script>
+</body>
+</html>

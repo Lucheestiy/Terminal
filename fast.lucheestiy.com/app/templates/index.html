@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Terminal - Rebuild Interface</title>
+    <link rel="stylesheet" href="/static/style.css?v=3">
+</head>
+<body>
+    <div class="terminal-container">
+        <div class="header">
+            <div class="header-main">
+                <h1>FAST TERMINAL</h1>
+                <div class="subtitle">Rebuild Management Interface</div>
+            </div>
+            <a href="/vision" class="vision-btn" title="Try the new Vision Command Center">
+                <span class="vision-icon">◈</span>
+                <span class="vision-text">Vision</span>
+            </a>
+        </div>
+
+        <div class="commands-list">
+            <span>Available commands:</span>
+            <span class="cmd">srbiz</span>
+            <span class="cmd">srbizinfo</span>
+        </div>
+
+        <div class="terminal-window">
+            <div class="output-area" id="output"></div>
+            <div class="input-area">
+                <span class="prompt">$</span>
+                <input type="text" id="command-input" placeholder="Enter command..." autocomplete="off">
+            </div>
+        </div>
+
+        <div class="status">
+            <span id="connection-status" class="disconnected">Disconnected</span>
+            <span id="time"></span>
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('command-input');
+        const statusEl = document.getElementById('connection-status');
+        const timeDisplay = document.getElementById('time');
+
+        let ws = null;
+        let executing = false;
+        let pingInterval = null;
+        let followOutput = true;
+        let pendingText = '';
+
+        const isTouch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        const STORAGE = {
+            runId: 'fastTerminal.runId',
+            offset: 'fastTerminal.offset',
+            active: 'fastTerminal.active'
+        };
+
+        let currentRunId = localStorage.getItem(STORAGE.runId) || '';
+        let currentOffset = parseInt(localStorage.getItem(STORAGE.offset) || '0', 10) || 0;
+        let runActive = localStorage.getItem(STORAGE.active) === '1';
+
+        function updateTime() {
+            const now = new Date();
+            timeDisplay.textContent = now.toLocaleTimeString();
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        function connect() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+            ws.onopen = () => {
+                statusEl.textContent = 'Connected to terminal server';
+                statusEl.className = 'connected';
+                addLine('Connected to terminal server', 'system');
+                // Send ping every 15 seconds to keep connection alive
+                pingInterval = setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send('ping');
+                    }
+                }, 15000);
+
+                // If we were running and got disconnected, resync from last known offset.
+                if (currentRunId) {
+                    const fromOffset = (output.children.length === 0) ? 0 : currentOffset;
+                    try {
+                        ws.send(JSON.stringify({ type: 'resume', runId: currentRunId, fromOffset }));
+                        addLine(`Resyncing ${currentRunId} from ${fromOffset}...`, 'system');
+                        executing = runActive;
+                        input.disabled = runActive;
+                        if (runActive && isTouch) input.blur();
+                    } catch (e) {
+                        console.error('Resume failed:', e);
+                    }
+                }
+            };
+
+            ws.onclose = () => {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'disconnected';
+                if (pingInterval) {
+                    clearInterval(pingInterval);
+                    pingInterval = null;
+                }
+                addLine('Connection lost. Reconnecting in 3s...', 'error');
+                setTimeout(connect, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                addLine('Connection error', 'error');
+            };
+
+            ws.onmessage = (event) => {
+                const text = event.data;
+                // Ignore ping responses
+                if (text === 'pong') return;
+
+                // JSON protocol
+                if (text && text[0] === '{') {
+                    try {
+                        const msg = JSON.parse(text);
+                        handleServerMessage(msg);
+                        return;
+                    } catch (e) {
+                        // fall through
+                    }
+                }
+
+                // Legacy fallback (plain text)
+                handleOutputChunk(text);
+            };
+        }
+
+        function handleServerMessage(msg) {
+            if (!msg || !msg.type) return;
+
+            if (msg.type === 'error') {
+                addLine(`Error: ${msg.message || 'Unknown error'}`, 'error');
+                executing = false;
+                runActive = false;
+                localStorage.setItem(STORAGE.active, '0');
+                input.disabled = false;
+                return;
+            }
+
+            if (msg.type === 'run_started') {
+                currentRunId = msg.runId || '';
+                currentOffset = 0;
+                runActive = true;
+                localStorage.setItem(STORAGE.runId, currentRunId);
+                localStorage.setItem(STORAGE.offset, String(currentOffset));
+                localStorage.setItem(STORAGE.active, '1');
+                addLine(`==> Run started: ${currentRunId}`, 'system');
+                executing = true;
+                if (isTouch) input.blur();
+                return;
+            }
+
+            if (msg.type === 'run_status') {
+                if (msg.runId) {
+                    currentRunId = msg.runId;
+                    localStorage.setItem(STORAGE.runId, currentRunId);
+                }
+                if (typeof msg.offset === 'number') {
+                    currentOffset = msg.offset;
+                    localStorage.setItem(STORAGE.offset, String(currentOffset));
+                }
+                if (typeof msg.done === 'boolean') {
+                    runActive = !msg.done;
+                    localStorage.setItem(STORAGE.active, runActive ? '1' : '0');
+                    executing = runActive;
+                    if (!runActive) input.disabled = false;
+                }
+                return;
+            }
+
+            if (msg.type === 'output') {
+                if (msg.runId) {
+                    currentRunId = msg.runId;
+                    localStorage.setItem(STORAGE.runId, currentRunId);
+                }
+                if (typeof msg.offset === 'number') {
+                    currentOffset = msg.offset;
+                    localStorage.setItem(STORAGE.offset, String(currentOffset));
+                }
+                handleOutputChunk(msg.text || '');
+                return;
+            }
+
+            if (msg.type === 'run_finished') {
+                runActive = false;
+                executing = false;
+                localStorage.setItem(STORAGE.active, '0');
+                addLine(`==> Finished (exit ${msg.exitCode ?? '?'})`, 'system');
+                input.disabled = false;
+                if (!isTouch) input.focus();
+                return;
+            }
+        }
+
+        function handleOutputChunk(chunk) {
+            if (!chunk) return;
+            const shouldFollow = followOutput || isNearBottom();
+
+            pendingText += chunk;
+            pendingText = pendingText.replace(/\r/g, '\n');
+            const lines = pendingText.split('\n');
+            pendingText = lines.pop() || '';
+            for (const line of lines) {
+                // Keep empty lines (but avoid a bunch of trailing empties)
+                addLine(line);
+            }
+
+            if (shouldFollow) scrollToBottom();
+        }
+
+        function isNearBottom() {
+            return (output.scrollHeight - output.scrollTop - output.clientHeight) < 40;
+        }
+
+        function scrollToBottom() {
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function addLine(text, type = '') {
+            const line = document.createElement('div');
+            line.className = 'output-line ' + type;
+            line.textContent = text;
+            output.appendChild(line);
+            if (followOutput || isNearBottom()) {
+                scrollToBottom();
+            }
+            // Cap lines to keep mobile responsive
+            while (output.children.length > 3000) {
+                output.removeChild(output.firstChild);
+            }
+        }
+
+        function sendCommand(cmd) {
+            if (!cmd.trim() || executing) return;
+
+            const promptLine = document.createElement('div');
+            promptLine.className = 'output-line system';
+            promptLine.textContent = '$ ' + cmd;
+            output.appendChild(promptLine);
+
+            executing = true;
+            input.disabled = true;
+
+            followOutput = true;
+            if (isTouch) input.blur();
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                addLine('Not connected', 'error');
+                executing = false;
+                input.disabled = false;
+                return;
+            }
+
+            ws.send(JSON.stringify({ type: 'run', cmd }));
+        }
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = input.value;
+                input.value = '';
+                sendCommand(cmd);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            connect();
+            if (!isTouch) input.focus();
+        });
+
+        output.addEventListener('scroll', () => {
+            followOutput = isNearBottom();
+        });
+
+        // Keep focus on input (desktop only; mobile scrolling should not trigger keyboard)
+        document.addEventListener('click', (e) => {
+            if (isTouch) return;
+            if (!executing && e.target.closest('.input-area')) input.focus();
+        });
+    </script>
+</body>
+</html>
