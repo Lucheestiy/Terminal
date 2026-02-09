@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SN re-auth | Show</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .guide-page {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .guide-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .guide-card h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .guide-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .guide-card p {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+
+        .guide-card ol {
+            padding-left: 1.2rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .guide-card li {
+            margin-bottom: 0.5rem;
+        }
+
+        .copy-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .copy-panel textarea {
+            width: 100%;
+            min-height: 330px;
+            resize: vertical;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            padding: 1rem;
+            font-family: "JetBrains Mono", "Fira Code", "Consolas", monospace;
+            font-size: 0.86rem;
+            line-height: 1.5;
+        }
+
+        .copy-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .copy-status {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+    </style>
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🎨</div>
+            <div class="logo-text">Show<span>.lucheestiy</span></div>
+        </div>
+        <nav>
+            <a href="index.html">Конструктор</a>
+            <a href="templates.html">Шаблоны</a>
+            <a href="docs.html">Документация</a>
+            <a href="examples.html">Примеры</a>
+            <a href="codex.html">Codex Live</a>
+            <a href="/ai-chats.html">AI чаты</a>
+            <a href="reports.html">Отчёты</a>
+            <a href="sn-auth.html" class="active">SN re-auth</a>
+        </nav>
+    </header>
+
+    <main class="guide-page">
+        <section class="guide-card">
+            <h1>SN re-auth инструкция</h1>
+            <p>Если профиль <code>sn</code> перестал работать из-за <code>token_expired</code> или <code>refresh_token_reused</code>, используй один из сценариев ниже.</p>
+            <ol>
+                <li><strong>Вариант A (рекомендуется):</strong> обычный <code>device-auth</code> через браузер.</li>
+                <li><strong>Вариант B:</strong> у тебя есть новый <code>refresh_token</code> и <code>account_id</code>, нужно аккуратно применить их в <code>/root/.codex/accounts/sn.json</code>.</li>
+                <li>После любого варианта обязательно прогоняй проверку и только потом возвращай <code>sn</code> в ротацию сервисов.</li>
+            </ol>
+        </section>
+
+        <section class="guide-card">
+            <h2>Prompt для Kimi CLI (device-auth)</h2>
+            <div class="copy-panel">
+                <textarea id="kimiPromptDevice" readonly>Fix Codex `sn` auth on this server.
+
+1) `codex-auth use sn`
+2) Confirm target account:
+   - `codex-auth current`
+   - `readlink -f /root/.codex/auth.json`
+3) Start `codex login --device-auth` and pause for my browser confirmation.
+4) After login, verify:
+   - `codex login status`
+   - `codex -a never -s read-only exec --skip-git-repo-check ping`
+   - `codexbar usage --provider codex --format json --json-only`
+5) If verification succeeds, re-enable `sn` in:
+   - `/etc/systemd/system/codexbar-stats.service` (`CODEX_AUTH_ACCOUNTS=tmr,pr,rl,kr,sn`)
+   - `/root/.codex/codex-auth-switcher.json` (`accounts` includes `sn`)
+6) Run:
+   - `systemctl daemon-reload`
+   - `systemctl start codexbar-stats.service`
+   - `python3 /root/clawd/scripts/codex-auth-switcher.py --dry-run`
+7) Show final status from:
+   - `/home/mlweb/stats.lucheestiy.com/public/data/last-run.json`
+
+If verification fails, do not re-enable `sn`; report exact error.
+Important: never print full tokens in output.</textarea>
+                <div class="copy-actions">
+                    <button class="btn btn-primary copy-btn" type="button" data-target="kimiPromptDevice" data-status="copyStatusDevice">Скопировать prompt (device-auth)</button>
+                    <span id="copyStatusDevice" class="copy-status">Готово к копированию</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="guide-card">
+            <h2>Prompt для Kimi CLI (ручной refresh token)</h2>
+            <p>Используй этот вариант, если ты сам передаешь новый <code>refresh_token</code> и <code>account_id</code>.</p>
+            <div class="copy-panel">
+                <textarea id="kimiPromptToken" readonly>Task: apply a new Codex refresh token to account `sn` safely, verify, and re-enable `sn` if valid.
+Important: NEVER print full tokens in output; redact secrets.
+
+Inputs I will provide:
+- REFRESH_TOKEN
+- ACCOUNT_ID
+
+Do:
+1) Switch account and backup:
+   - `codex-auth use sn`
+   - `cp -a /root/.codex/accounts/sn.json /root/.codex/accounts/sn.json.bak.$(date -u +%Y%m%dT%H%M%SZ)`
+
+2) Update `/root/.codex/accounts/sn.json`:
+   - set `.tokens.refresh_token = REFRESH_TOKEN`
+   - set `.tokens.account_id = ACCOUNT_ID`
+   - set `.last_refresh = current UTC timestamp`
+   - keep all other fields unchanged
+   - keep file permissions strict (`0600`)
+
+3) Verify `sn`:
+   - `codex-auth current`
+   - `readlink -f /root/.codex/auth.json`
+   - `codex login status`
+   - `codex -a never -s read-only exec --skip-git-repo-check ping`
+   - `codexbar usage --provider codex --format json --json-only`
+
+4) If verification succeeds:
+   - add `sn` back to `/etc/systemd/system/codexbar-stats.service` in `CODEX_AUTH_ACCOUNTS`
+   - add `sn` back to `/root/.codex/codex-auth-switcher.json` `accounts`
+   - run:
+     - `systemctl daemon-reload`
+     - `systemctl start codexbar-stats.service`
+     - `python3 /root/clawd/scripts/codex-auth-switcher.py --dry-run`
+   - show final status from:
+     - `/home/mlweb/stats.lucheestiy.com/public/data/last-run.json`
+
+5) If verification fails:
+   - do not re-enable `sn`
+   - restore backup `sn.json`
+   - report exact error (`refresh_token_reused`, `invalid_grant`, `token_expired`, etc.)</textarea>
+                <div class="copy-actions">
+                    <button class="btn btn-primary copy-btn" type="button" data-target="kimiPromptToken" data-status="copyStatusToken">Скопировать prompt (refresh token)</button>
+                    <span id="copyStatusToken" class="copy-status">Готово к копированию</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            function setTemporaryCopiedState(button, status) {
+                const original = button.textContent;
+                button.textContent = "Скопировано";
+                status.textContent = "Скопировано в буфер обмена";
+                setTimeout(function () {
+                    button.textContent = original;
+                    status.textContent = "Готово к копированию";
+                }, 1400);
+            }
+
+            async function copyPrompt(targetId, statusId, button) {
+                const textArea = document.getElementById(targetId);
+                const copyStatus = document.getElementById(statusId);
+                if (!textArea || !copyStatus) return;
+                const text = textArea.value;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    setTemporaryCopiedState(button, copyStatus);
+                } catch (err) {
+                    textArea.focus();
+                    textArea.select();
+                    copyStatus.textContent = "Не удалось скопировать автоматически. Нажми Ctrl/Cmd + C.";
+                }
+            }
+
+            document.querySelectorAll(".copy-btn").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    const targetId = button.getAttribute("data-target");
+                    const statusId = button.getAttribute("data-status");
+                    copyPrompt(targetId, statusId, button);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

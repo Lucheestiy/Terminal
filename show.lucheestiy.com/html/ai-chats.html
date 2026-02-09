@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI чаты | Show</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        :root {
+            --page-gap: 12px;
+            --mobile-nav-h: 48px;
+        }
+
+        /* Safety net for legacy template wrappers with a large global header. */
+        body > header.header {
+            display: none !important;
+        }
+
+        .page {
+            display: grid;
+            grid-template-columns: 380px minmax(0, 1fr);
+            gap: 12px;
+            padding: 12px;
+            height: 100dvh;
+            box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-list .panel-head,
+        .panel-chat .panel-head {
+            position: sticky;
+            top: 0;
+            z-index: 8;
+            background: var(--bg-card);
+        }
+
+        .panel-head h3 {
+            font-size: 14px;
+            line-height: 1.2;
+            margin: 0;
+        }
+
+        .panel-head-title {
+            min-width: 0;
+        }
+
+        .panel-head-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .muted {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .controls input {
+            width: 210px;
+            max-width: 44vw;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+
+        .controls select {
+            width: 150px;
+            max-width: 38vw;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 8px;
+            font-size: 12px;
+        }
+
+        .sort-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quick-sort {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .quick-sort button {
+            border: 1px solid var(--border);
+            background: var(--bg-light);
+            color: var(--text-secondary);
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            line-height: 1.2;
+        }
+
+        .quick-sort button.active {
+            border-color: var(--primary);
+            color: var(--text-primary);
+            background: rgba(79, 70, 229, 0.2);
+        }
+
+        .sort-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+
+        .controls button,
+        .head-actions button {
+            background: var(--bg-light);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 9px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .controls button:hover,
+        .head-actions button:hover {
+            filter: brightness(1.08);
+        }
+
+        .head-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            max-width: 100%;
+        }
+
+        .head-actions button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .head-actions button.active {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.20);
+            color: #d1fae5;
+        }
+
+        .list { overflow: auto; flex: 1; min-height: 0; }
+
+        .row {
+            border-bottom: 1px solid var(--border);
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .row:hover {
+            background: rgba(79, 70, 229, 0.10);
+        }
+
+        .row.active {
+            background: rgba(79, 70, 229, 0.18);
+            border-left: 3px solid var(--primary);
+            padding-left: 9px;
+        }
+
+        .line1 {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .line2 {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.35;
+        }
+
+        .line2 strong {
+            color: var(--text-primary);
+        }
+
+        .chat {
+            overflow: auto;
+            flex: 1;
+            min-height: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .turn-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 0;
+        }
+
+        .turn-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 4px;
+        }
+
+        .turn-copy-btn {
+            border: 1px solid var(--border);
+            background: var(--bg-light);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 3px 8px;
+            font-size: 11px;
+            line-height: 1.2;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .turn-copy-btn:hover {
+            filter: brightness(1.08);
+        }
+
+        .bubble {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .bubble.user {
+            background: rgba(16, 185, 129, 0.12);
+        }
+
+        .bubble.assistant {
+            background: rgba(79, 70, 229, 0.12);
+        }
+
+        .bubble.assistant a {
+            color: #8ee7ff;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            text-decoration-thickness: 1px;
+        }
+
+        .bubble.assistant a:visited {
+            color: #b7e3ff;
+        }
+
+        .bubble.assistant a:hover,
+        .bubble.assistant a:focus-visible {
+            color: #ffffff;
+            background: rgba(142, 231, 255, 0.16);
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .state {
+            padding: 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .error {
+            color: #fecaca;
+        }
+
+        .mobile-only {
+            display: none;
+        }
+
+        .mobile-nav {
+            display: none;
+        }
+
+        @media (max-width: 1024px) {
+            .page {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 10px;
+                height: 100dvh;
+                padding-bottom: calc(var(--mobile-nav-h) + 12px);
+            }
+
+            .panel-list .panel-head {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+                padding: 10px;
+            }
+
+            .panel-list .panel-head-title {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .panel-list .panel-head-meta {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .panel-list #listFiltersToggle {
+                min-height: 30px;
+                padding: 5px 10px;
+                font-size: 11px;
+                border: 1px solid var(--border);
+                border-radius: 999px;
+                background: var(--bg-light);
+                color: var(--text-primary);
+            }
+
+            .panel-list .controls {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                width: 100%;
+                transition: max-height 0.22s ease, opacity 0.22s ease, gap 0.22s ease, margin-top 0.22s ease;
+                margin-top: 2px;
+            }
+
+            .panel-list .controls input,
+            .panel-list .controls select,
+            .panel-list .controls button {
+                width: 100%;
+                max-width: none;
+                min-height: 34px;
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+
+            .panel-list .controls input {
+                grid-column: 1 / -1;
+            }
+
+            .panel-list .sort-wrap {
+                grid-column: 1 / -1;
+                display: grid;
+                grid-template-columns: auto minmax(0, 1fr);
+                gap: 8px;
+                align-items: center;
+            }
+
+            .panel-list .quick-sort {
+                grid-column: 1 / -1;
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 6px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 2px;
+            }
+
+            .panel-list .quick-sort button {
+                flex: 0 0 auto;
+                min-height: 30px;
+                padding: 6px 10px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+
+            .panel-list #showSelectedBtn {
+                grid-column: 1 / -1;
+            }
+
+            body[data-list-filters="closed"] .panel-list .controls {
+                max-height: 0;
+                opacity: 0;
+                overflow: hidden;
+                pointer-events: none;
+                gap: 0;
+                margin-top: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+
+            body[data-list-filters="open"] .panel-list .controls {
+                max-height: 1200px;
+                opacity: 1;
+                pointer-events: auto;
+                gap: 8px;
+                margin-top: 2px;
+            }
+
+            .mobile-only {
+                display: inline-flex;
+            }
+
+            .panel-chat .panel-head {
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            #chatTitle,
+            #chatMeta {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
+            .head-actions {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 6px;
+                width: 100%;
+            }
+
+            .head-actions button {
+                width: 100%;
+                min-height: 32px;
+                padding: 6px 4px;
+                font-size: 11px;
+                white-space: normal;
+                line-height: 1.1;
+            }
+
+            #backToList,
+            #copyChatBtn {
+                grid-column: span 2;
+            }
+
+            body[data-mobile-view="list"] .panel-chat {
+                display: none;
+            }
+
+            body[data-mobile-view="chat"] .panel-list {
+                display: none;
+            }
+
+            .mobile-nav {
+                display: grid;
+                grid-template-columns: 1.4fr 1fr 1fr 1.2fr;
+                gap: 8px;
+                position: fixed;
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                z-index: 260;
+                background: var(--bg-card);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 6px;
+            }
+
+            .mobile-nav button {
+                height: 34px;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                background: var(--bg-light);
+                color: var(--text-primary);
+                font-size: 12px;
+                cursor: pointer;
+            }
+
+            .mobile-nav button:disabled {
+                opacity: 0.45;
+                cursor: default;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .panel-list .controls {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-list .sort-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .panel-list .panel-head-meta {
+                gap: 6px;
+            }
+
+            .head-actions {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            #backToList,
+            #copyChatBtn {
+                grid-column: span 3;
+            }
+        }
+    </style>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+</head>
+<body data-mobile-view="list" data-list-filters="closed">
+    <main class="page">
+        <section class="panel panel-list" id="listPanel">
+            <div class="panel-head">
+                <div class="panel-head-title">
+                    <h3>История AI чатов</h3>
+                    <div class="panel-head-meta">
+                        <div id="sessionStats" class="muted">Загрузка…</div>
+                        <button id="listFiltersToggle" type="button" class="mobile-only" aria-expanded="false">Фильтры</button>
+                    </div>
+                </div>
+                <div class="controls">
+                    <input id="search" type="search" placeholder="поиск по user/email/сообщению" />
+                    <select id="userFilter" title="Фильтр по пользователю">
+                        <option value="">User: все</option>
+                    </select>
+                    <select id="sourceFilter" title="Фильтр по источнику">
+                        <option value="">Источник: все</option>
+                    </select>
+                    <select id="periodFilter" title="Фильтр по периоду">
+                        <option value="all">Период: всё</option>
+                        <option value="24h">24 часа</option>
+                        <option value="7d">7 дней</option>
+                        <option value="30d">30 дней</option>
+                        <option value="90d">90 дней</option>
+                    </select>
+                    <div class="sort-wrap">
+                        <label for="sortBy" class="sort-label">Сортировка:</label>
+                        <select id="sortBy" title="Сортировка списка чатов">
+                            <option value="date_desc">Дата: новые</option>
+                            <option value="date_asc">Дата: старые</option>
+                            <option value="user_asc">User: А-Я</option>
+                            <option value="user_desc">User: Я-А</option>
+                            <option value="turns_desc">Ходы: больше</option>
+                            <option value="turns_asc">Ходы: меньше</option>
+                            <option value="source_asc">Источник: А-Я</option>
+                            <option value="source_desc">Источник: Я-А</option>
+                        </select>
+                    </div>
+                    <div class="quick-sort" id="quickSortChips" aria-label="Быстрая сортировка">
+                        <button type="button" data-sort="date_desc">Новые</button>
+                        <button type="button" data-sort="date_asc">Старые</button>
+                        <button type="button" data-sort="user_asc">User</button>
+                        <button type="button" data-sort="turns_desc">Ходы</button>
+                    </div>
+                    <button id="showSelectedBtn" type="button" style="display:none;">Показать текущую</button>
+                    <button id="clearFilters" type="button">Сбросить</button>
+                    <button id="reload" type="button">Обновить</button>
+                </div>
+            </div>
+            <div id="list" class="list"></div>
+        </section>
+
+        <section class="panel panel-chat" id="chatPanel">
+            <div class="panel-head">
+                <div>
+                    <h3 id="chatTitle">Диалог</h3>
+                    <div id="chatMeta" class="muted">Выбери сессию</div>
+                </div>
+                <div class="head-actions">
+                    <button id="backToList" type="button" class="mobile-only">← Сессии</button>
+                    <button id="copyChatBtn" type="button" title="Скопировать текущий чат целиком" disabled>Копия чата</button>
+                    <button id="wrapNavBtn" type="button" title="Циклическая навигация">Цикл</button>
+                    <button id="firstSession" type="button" title="Первая сессия">⏮</button>
+                    <button id="prevSession" type="button" title="Предыдущая сессия">◀</button>
+                    <button id="nextSession" type="button" title="Следующая сессия">▶</button>
+                    <button id="lastSession" type="button" title="Последняя сессия">⏭</button>
+                </div>
+            </div>
+            <div id="chat" class="chat"></div>
+        </section>
+    </main>
+
+    <nav class="mobile-nav" aria-label="Навигация AI чатов">
+        <button id="mobileListBtn" type="button">Сессии</button>
+        <button id="mobilePrevBtn" type="button" title="Предыдущая сессия">◀</button>
+        <button id="mobileNextBtn" type="button" title="Следующая сессия">▶</button>
+        <button id="mobileReloadBtn" type="button">Обновить</button>
+    </nav>
+
+    <script>
+    (function () {
+        const listEl = document.getElementById('list');
+        const chatEl = document.getElementById('chat');
+        const chatTitleEl = document.getElementById('chatTitle');
+        const chatMetaEl = document.getElementById('chatMeta');
+        const sessionStatsEl = document.getElementById('sessionStats');
+        const listFiltersToggleBtn = document.getElementById('listFiltersToggle');
+        const reloadBtn = document.getElementById('reload');
+        const searchInput = document.getElementById('search');
+        const userFilterSelect = document.getElementById('userFilter');
+        const sourceFilterSelect = document.getElementById('sourceFilter');
+        const periodFilterSelect = document.getElementById('periodFilter');
+        const sortSelect = document.getElementById('sortBy');
+        const quickSortChips = document.getElementById('quickSortChips');
+        const showSelectedBtn = document.getElementById('showSelectedBtn');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        const backBtn = document.getElementById('backToList');
+        const copyChatBtn = document.getElementById('copyChatBtn');
+        const wrapNavBtn = document.getElementById('wrapNavBtn');
+        const firstBtn = document.getElementById('firstSession');
+        const prevBtn = document.getElementById('prevSession');
+        const nextBtn = document.getElementById('nextSession');
+        const lastBtn = document.getElementById('lastSession');
+        const mobileListBtn = document.getElementById('mobileListBtn');
+        const mobilePrevBtn = document.getElementById('mobilePrevBtn');
+        const mobileNextBtn = document.getElementById('mobileNextBtn');
+        const mobileReloadBtn = document.getElementById('mobileReloadBtn');
+
+        let sessions = [];
+        let selectedId = null;
+        let activeSessionChainIds = [];
+        let visibleSessions = [];
+        let copyPayloadById = new Map();
+        let currentChatCopyPayload = '';
+        let listController = null;
+        let detailsSeq = 0;
+        let currentSort = 'date_desc';
+        let currentUserFilter = '';
+        let currentSourceFilter = '';
+        let currentPeriodFilter = 'all';
+        let navWrap = false;
+        let listFiltersOpen = false;
+
+        const STATE_KEY = 'show.ai_chats.v1';
+        const SORT_LABELS = {
+            date_desc: 'дата: новые',
+            date_asc: 'дата: старые',
+            user_asc: 'user: А-Я',
+            user_desc: 'user: Я-А',
+            turns_desc: 'ходы: больше',
+            turns_asc: 'ходы: меньше',
+            source_asc: 'источник: А-Я',
+            source_desc: 'источник: Я-А'
+        };
+
+        const mobileMedia = window.matchMedia('(max-width: 1024px)');
+
+        function isMobile() {
+            return mobileMedia.matches;
+        }
+
+        function esc(str) {
+            return String(str || '').replace(/[&<>\"']/g, function (ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+            });
+        }
+
+        function fmtDate(value) {
+            const d = new Date(value);
+            if (!Number.isFinite(d.getTime())) return value || '—';
+            return d.toLocaleString();
+        }
+
+        function short(str, n) {
+            const s = String(str || '').trim();
+            if (!s) return '—';
+            return s.length > n ? s.slice(0, n - 1) + '…' : s;
+        }
+
+        function normalizeSort(raw) {
+            const key = String(raw || '').trim();
+            return SORT_LABELS[key] ? key : 'date_desc';
+        }
+
+        function getSortLabel(sortKey) {
+            return SORT_LABELS[normalizeSort(sortKey)];
+        }
+
+        function getSortFromUrl() {
+            const u = new URL(window.location.href);
+            const raw = String(u.searchParams.get('sort') || '').trim();
+            return raw ? normalizeSort(raw) : null;
+        }
+
+        function normalizeKey(raw) {
+            return String(raw || '').trim().toLowerCase();
+        }
+
+        function normalizePeriod(raw) {
+            const p = String(raw || '').trim().toLowerCase();
+            return (p === '24h' || p === '7d' || p === '30d' || p === '90d') ? p : 'all';
+        }
+
+        function getUserFilterFromUrl() {
+            const u = new URL(window.location.href);
+            if (!u.searchParams.has('user')) return null;
+            return normalizeKey(u.searchParams.get('user'));
+        }
+
+        function getSourceFilterFromUrl() {
+            const u = new URL(window.location.href);
+            if (!u.searchParams.has('source')) return null;
+            return normalizeKey(u.searchParams.get('source'));
+        }
+
+        function getPeriodFilterFromUrl() {
+            const u = new URL(window.location.href);
+            if (!u.searchParams.has('period')) return null;
+            return normalizePeriod(u.searchParams.get('period'));
+        }
+
+        function getWrapFromUrl() {
+            const u = new URL(window.location.href);
+            if (!u.searchParams.has('wrap')) return null;
+            return String(u.searchParams.get('wrap') || '').trim() === '1';
+        }
+
+        function setSortInUrl(sortKey, replace) {
+            const u = new URL(window.location.href);
+            const key = normalizeSort(sortKey);
+            if (key === 'date_desc') u.searchParams.delete('sort');
+            else u.searchParams.set('sort', key);
+            const next = u.pathname + u.search + u.hash;
+            if (replace) window.history.replaceState({ sid: getSidFromUrl() }, '', next);
+            else window.history.pushState({ sid: getSidFromUrl() }, '', next);
+        }
+
+        function setUserFilterInUrl(value, replace) {
+            const u = new URL(window.location.href);
+            const v = normalizeKey(value);
+            if (!v) u.searchParams.delete('user');
+            else u.searchParams.set('user', v);
+            const next = u.pathname + u.search + u.hash;
+            if (replace) window.history.replaceState({ sid: getSidFromUrl() }, '', next);
+            else window.history.pushState({ sid: getSidFromUrl() }, '', next);
+        }
+
+        function setSourceFilterInUrl(value, replace) {
+            const u = new URL(window.location.href);
+            const v = normalizeKey(value);
+            if (!v) u.searchParams.delete('source');
+            else u.searchParams.set('source', v);
+            const next = u.pathname + u.search + u.hash;
+            if (replace) window.history.replaceState({ sid: getSidFromUrl() }, '', next);
+            else window.history.pushState({ sid: getSidFromUrl() }, '', next);
+        }
+
+        function setPeriodFilterInUrl(value, replace) {
+            const u = new URL(window.location.href);
+            const v = normalizePeriod(value);
+            if (v === 'all') u.searchParams.delete('period');
+            else u.searchParams.set('period', v);
+            const next = u.pathname + u.search + u.hash;
+            if (replace) window.history.replaceState({ sid: getSidFromUrl() }, '', next);
+            else window.history.pushState({ sid: getSidFromUrl() }, '', next);
+        }
+
+        function setWrapInUrl(value, replace) {
+            const u = new URL(window.location.href);
+            if (value) u.searchParams.set('wrap', '1');
+            else u.searchParams.delete('wrap');
+            const next = u.pathname + u.search + u.hash;
+            if (replace) window.history.replaceState({ sid: getSidFromUrl() }, '', next);
+            else window.history.pushState({ sid: getSidFromUrl() }, '', next);
+        }
+
+        function sessionUserRaw(session) {
+            if (!session || !session.user) return '';
+            return String(session.user.name || session.user.email || session.user.id || '').trim();
+        }
+
+        function sessionUserLabel(session) {
+            return normalizeKey(sessionUserRaw(session));
+        }
+
+        function sessionSourceRaw(session) {
+            return String((session && session.source) || '').trim();
+        }
+
+        function sessionSourceLabel(session) {
+            return normalizeKey(sessionSourceRaw(session));
+        }
+
+        function sessionDateMs(session) {
+            const ms = Date.parse(String((session && session.lastMessageAt) || ''));
+            return Number.isFinite(ms) ? ms : 0;
+        }
+
+        function sortSessionsInPlace() {
+            const key = normalizeSort(currentSort);
+            sessions.sort(function (a, b) {
+                const aDate = sessionDateMs(a);
+                const bDate = sessionDateMs(b);
+                const aUser = sessionUserLabel(a);
+                const bUser = sessionUserLabel(b);
+                const aTurns = Number((a && a.turnCount) || 0);
+                const bTurns = Number((b && b.turnCount) || 0);
+                const aSource = sessionSourceLabel(a);
+                const bSource = sessionSourceLabel(b);
+
+                if (key === 'date_asc') return aDate - bDate || aUser.localeCompare(bUser, 'ru') || String(a.id || '').localeCompare(String(b.id || ''));
+                if (key === 'date_desc') return bDate - aDate || aUser.localeCompare(bUser, 'ru') || String(a.id || '').localeCompare(String(b.id || ''));
+                if (key === 'user_asc') return aUser.localeCompare(bUser, 'ru') || (bDate - aDate) || String(a.id || '').localeCompare(String(b.id || ''));
+                if (key === 'user_desc') return bUser.localeCompare(aUser, 'ru') || (bDate - aDate) || String(a.id || '').localeCompare(String(b.id || ''));
+                if (key === 'turns_asc') return aTurns - bTurns || (bDate - aDate) || String(a.id || '').localeCompare(String(b.id || ''));
+                if (key === 'turns_desc') return bTurns - aTurns || (bDate - aDate) || String(a.id || '').localeCompare(String(b.id || ''));
+                if (key === 'source_asc') return aSource.localeCompare(bSource, 'ru') || (bDate - aDate) || String(a.id || '').localeCompare(String(b.id || ''));
+                if (key === 'source_desc') return bSource.localeCompare(aSource, 'ru') || (bDate - aDate) || String(a.id || '').localeCompare(String(b.id || ''));
+                return bDate - aDate || String(a.id || '').localeCompare(String(b.id || ''));
+            });
+        }
+
+        function linkifyCompanyPaths(raw) {
+            const escaped = esc(raw || '');
+            const withCompanyLinks = escaped.replace(
+                /(^|[\s(>])\/company\/([a-z0-9-]{2,})/gimu,
+                function (_, prefix, slug) {
+                    const href = 'https://biznesinfo.lucheestiy.com/company/' + slug;
+                    return prefix + '<a href="' + href + '" target="_blank" rel="noopener">/company/' + slug + '</a>';
+                }
+            );
+            return withCompanyLinks.replace(
+                /(^|[\s(>])((?:https?:\/\/)[^\s<]+)/gimu,
+                function (_, prefix, url) {
+                    return prefix + '<a href="' + url + '" target="_blank" rel="noopener">' + url + '</a>';
+                }
+            );
+        }
+
+        async function copyTextWithFallback(payload) {
+            if (!payload) return false;
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(payload);
+                    return true;
+                } else {
+                    throw new Error('Clipboard API unavailable');
+                }
+            } catch {
+                const ta = document.createElement('textarea');
+                ta.value = payload;
+                ta.setAttribute('readonly', 'readonly');
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); } catch {}
+                document.body.removeChild(ta);
+                return true;
+            }
+        }
+
+        function flashButtonCopied(btn, fallbackLabel) {
+            if (!btn) return;
+            const originalLabel = btn.textContent || fallbackLabel || 'Копия';
+            btn.textContent = 'Скопировано';
+            window.setTimeout(function () {
+                btn.textContent = originalLabel || fallbackLabel || 'Копия';
+            }, 1300);
+        }
+
+        async function copyRawTextById(copyId, btn) {
+            const payload = copyPayloadById.get(copyId);
+            if (!payload) return;
+            const ok = await copyTextWithFallback(payload);
+            if (ok) {
+                flashButtonCopied(btn, 'Копия');
+            }
+        }
+
+        function getSidFromUrl() {
+            const u = new URL(window.location.href);
+            const sid = String(u.searchParams.get('sid') || '').trim();
+            return sid || null;
+        }
+
+        function getSearchFromUrl() {
+            const u = new URL(window.location.href);
+            return String(u.searchParams.get('q') || '').trim();
+        }
+
+        function setSidInUrl(sid, replace) {
+            const u = new URL(window.location.href);
+            if (sid) u.searchParams.set('sid', sid);
+            else u.searchParams.delete('sid');
+            const next = u.pathname + u.search + u.hash;
+            if (replace) window.history.replaceState({ sid: sid || null }, '', next);
+            else window.history.pushState({ sid: sid || null }, '', next);
+        }
+
+        function setSearchInUrl(q, replace) {
+            const u = new URL(window.location.href);
+            if (q) u.searchParams.set('q', q);
+            else u.searchParams.delete('q');
+            const next = u.pathname + u.search + u.hash;
+            if (replace) window.history.replaceState({ sid: getSidFromUrl() }, '', next);
+            else window.history.pushState({ sid: getSidFromUrl() }, '', next);
+        }
+
+        function setMobileView(view) {
+            document.body.setAttribute('data-mobile-view', view === 'chat' ? 'chat' : 'list');
+            saveState();
+        }
+
+        function activeFiltersCount() {
+            let count = 0;
+            if (String(searchInput.value || '').trim()) count += 1;
+            if (normalizeKey(currentUserFilter)) count += 1;
+            if (normalizeKey(currentSourceFilter)) count += 1;
+            if (normalizePeriod(currentPeriodFilter) !== 'all') count += 1;
+            if (normalizeSort(currentSort) !== 'date_desc') count += 1;
+            return count;
+        }
+
+        function updateListFiltersToggleLabel() {
+            if (!listFiltersToggleBtn) return;
+            const count = activeFiltersCount();
+            const open = !!listFiltersOpen;
+            if (open) {
+                listFiltersToggleBtn.textContent = count ? ('Скрыть (' + count + ')') : 'Скрыть';
+            } else {
+                listFiltersToggleBtn.textContent = count ? ('Фильтры (' + count + ')') : 'Фильтры';
+            }
+            listFiltersToggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        function setListFiltersOpen(open) {
+            if (!isMobile()) {
+                document.body.setAttribute('data-list-filters', 'open');
+                updateListFiltersToggleLabel();
+                return;
+            }
+            listFiltersOpen = !!open;
+            document.body.setAttribute('data-list-filters', listFiltersOpen ? 'open' : 'closed');
+            updateListFiltersToggleLabel();
+        }
+
+        function updateWrapUi() {
+            if (!wrapNavBtn) return;
+            wrapNavBtn.classList.toggle('active', !!navWrap);
+            wrapNavBtn.textContent = navWrap ? 'Цикл: ON' : 'Цикл';
+            wrapNavBtn.title = navWrap
+                ? 'Циклическая навигация включена'
+                : 'Циклическая навигация выключена';
+        }
+
+        function syncSortUi() {
+            if (sortSelect) sortSelect.value = normalizeSort(currentSort);
+            if (!quickSortChips) return;
+            quickSortChips.querySelectorAll('button[data-sort]').forEach(function (btn) {
+                const key = normalizeSort(btn.getAttribute('data-sort'));
+                btn.classList.toggle('active', key === normalizeSort(currentSort));
+            });
+        }
+
+        function applySort(sortKey, replaceUrl) {
+            currentSort = normalizeSort(sortKey);
+            syncSortUi();
+            sortSessionsInPlace();
+            renderList();
+            setSortInUrl(currentSort, !!replaceUrl);
+            saveState();
+        }
+
+        function saveState() {
+            const state = {
+                sid: selectedId || null,
+                q: String(searchInput.value || '').trim(),
+                sort: normalizeSort(currentSort),
+                userFilter: normalizeKey(currentUserFilter),
+                sourceFilter: normalizeKey(currentSourceFilter),
+                periodFilter: normalizePeriod(currentPeriodFilter),
+                wrapNav: !!navWrap,
+                listFiltersOpen: !!listFiltersOpen,
+                view: document.body.getAttribute('data-mobile-view') || 'list'
+            };
+            try {
+                window.localStorage.setItem(STATE_KEY, JSON.stringify(state));
+            } catch {}
+        }
+
+        function restoreState() {
+            try {
+                const raw = window.localStorage.getItem(STATE_KEY);
+                if (!raw) return {};
+                const state = JSON.parse(raw);
+                return state && typeof state === 'object' ? state : {};
+            } catch {
+                return {};
+            }
+        }
+
+        function setSessionStats(visible, total, selectedVisible) {
+            if (!sessionStatsEl) return;
+            if (!total) {
+                sessionStatsEl.textContent = isMobile() ? '0/0' : 'Сессий: 0';
+                if (showSelectedBtn) showSelectedBtn.style.display = 'none';
+                updateListFiltersToggleLabel();
+                return;
+            }
+            const selectedHiddenNote = selectedId && !selectedVisible ? ' · текущая сессия скрыта фильтром' : '';
+            if (isMobile()) {
+                sessionStatsEl.textContent = visible + '/' + total + ' · ' + getSortLabel(currentSort);
+            } else {
+                sessionStatsEl.textContent = 'Показано: ' + visible + ' из ' + total + ' · сорт: ' + getSortLabel(currentSort) + selectedHiddenNote;
+            }
+            if (showSelectedBtn) showSelectedBtn.style.display = selectedHiddenNote ? 'inline-flex' : 'none';
+            updateListFiltersToggleLabel();
+        }
+
+        function updateNavButtons() {
+            const idx = visibleSessions.findIndex(function (s) { return s.id === selectedId; });
+            if (idx < 0 && visibleSessions.length > 0) {
+                if (firstBtn) firstBtn.disabled = false;
+                prevBtn.disabled = false;
+                nextBtn.disabled = false;
+                if (lastBtn) lastBtn.disabled = false;
+                if (mobilePrevBtn) mobilePrevBtn.disabled = false;
+                if (mobileNextBtn) mobileNextBtn.disabled = false;
+                return;
+            }
+            if (firstBtn) firstBtn.disabled = idx <= 0;
+            prevBtn.disabled = idx <= 0;
+            nextBtn.disabled = idx < 0 || idx >= visibleSessions.length - 1;
+            if (lastBtn) lastBtn.disabled = idx < 0 || idx >= visibleSessions.length - 1;
+            if (mobilePrevBtn) mobilePrevBtn.disabled = prevBtn.disabled;
+            if (mobileNextBtn) mobileNextBtn.disabled = nextBtn.disabled;
+        }
+
+        function buildSelectOptions(selectEl, placeholderText, items, selectedValue) {
+            if (!selectEl) return '';
+            const doc = document;
+            const fragment = doc.createDocumentFragment();
+
+            const first = doc.createElement('option');
+            first.value = '';
+            first.textContent = placeholderText;
+            fragment.appendChild(first);
+
+            items.forEach(function (item) {
+                const option = doc.createElement('option');
+                option.value = item.value;
+                option.textContent = item.label;
+                fragment.appendChild(option);
+            });
+
+            selectEl.innerHTML = '';
+            selectEl.appendChild(fragment);
+            selectEl.value = selectedValue || '';
+            return String(selectEl.value || '');
+        }
+
+        function rebuildFilterOptions() {
+            const userMap = new Map();
+            const sourceMap = new Map();
+
+            sessions.forEach(function (s) {
+                const userRaw = sessionUserRaw(s);
+                const userKey = normalizeKey(userRaw);
+                if (userKey && !userMap.has(userKey)) userMap.set(userKey, userRaw);
+
+                const sourceRaw = sessionSourceRaw(s);
+                const sourceKey = normalizeKey(sourceRaw);
+                if (sourceKey && !sourceMap.has(sourceKey)) sourceMap.set(sourceKey, sourceRaw);
+            });
+
+            const userItems = Array.from(userMap.entries())
+                .map(function (entry) { return { value: entry[0], label: entry[1] }; })
+                .sort(function (a, b) { return a.label.localeCompare(b.label, 'ru'); });
+
+            const sourceItems = Array.from(sourceMap.entries())
+                .map(function (entry) { return { value: entry[0], label: entry[1] }; })
+                .sort(function (a, b) { return a.label.localeCompare(b.label, 'ru'); });
+
+            currentUserFilter = normalizeKey(buildSelectOptions(userFilterSelect, 'User: все', userItems, currentUserFilter));
+            currentSourceFilter = normalizeKey(buildSelectOptions(sourceFilterSelect, 'Источник: все', sourceItems, currentSourceFilter));
+            currentPeriodFilter = normalizePeriod(currentPeriodFilter);
+            if (periodFilterSelect) {
+                periodFilterSelect.value = currentPeriodFilter;
+                currentPeriodFilter = normalizePeriod(periodFilterSelect.value);
+            }
+        }
+
+        function periodMinTimestamp(period) {
+            const p = normalizePeriod(period);
+            const now = Date.now();
+            if (p === '24h') return now - 24 * 60 * 60 * 1000;
+            if (p === '7d') return now - 7 * 24 * 60 * 60 * 1000;
+            if (p === '30d') return now - 30 * 24 * 60 * 60 * 1000;
+            if (p === '90d') return now - 90 * 24 * 60 * 60 * 1000;
+            return 0;
+        }
+
+        async function fetchJson(url, options) {
+            const r = await fetch(url, Object.assign({ cache: 'no-store' }, options || {}));
+            const t = await r.text();
+            let j = {};
+            try { j = t ? JSON.parse(t) : {}; } catch { j = { raw: t }; }
+            if (!r.ok) {
+                const msg = j && (j.error || j.message) ? (j.error || j.message) : ('HTTP ' + r.status);
+                throw new Error(msg);
+            }
+            return j;
+        }
+
+        function renderList() {
+            const needle = String(searchInput.value || '').trim().toLowerCase();
+            const userNeedle = normalizeKey(currentUserFilter);
+            const sourceNeedle = normalizeKey(currentSourceFilter);
+            const minTimestamp = periodMinTimestamp(currentPeriodFilter);
+
+            visibleSessions = sessions.filter(function (s) {
+                const hay = [
+                    s.id,
+                    s.user && s.user.email,
+                    s.user && s.user.name,
+                    s.lastUserMessage,
+                    s.lastAssistantMessage
+                ].join(' ').toLowerCase();
+                if (needle && hay.indexOf(needle) === -1) return false;
+                if (userNeedle && sessionUserLabel(s) !== userNeedle) return false;
+                if (sourceNeedle && sessionSourceLabel(s) !== sourceNeedle) return false;
+                if (minTimestamp > 0 && sessionDateMs(s) < minTimestamp) return false;
+                return true;
+            });
+            const selectedVisible = visibleSessions.some(function (s) { return s.id === selectedId; });
+            setSessionStats(visibleSessions.length, sessions.length, selectedVisible);
+
+            if (!visibleSessions.length) {
+                listEl.innerHTML = '<div class="state">Сессии не найдены. Попробуйте изменить фильтры или нажать «Сбросить».</div>';
+                updateNavButtons();
+                return;
+            }
+
+            listEl.innerHTML = visibleSessions.map(function (s) {
+                const active = s.id === selectedId ? ' active' : '';
+                const user = s.user ? (s.user.name || s.user.email || s.user.id || '—') : '—';
+                return '' +
+                    '<div class="row' + active + '" data-id="' + esc(s.id) + '">' +
+                        '<div class="line1"><span>' + esc(fmtDate(s.lastMessageAt)) + '</span><span>' + esc(String(s.turnCount || 0)) + ' ход(ов)</span></div>' +
+                        '<div class="line2"><strong>User:</strong> ' + esc(short(user, 64)) + '</div>' +
+                        '<div class="line2"><strong>Вы:</strong> ' + esc(short(s.lastUserMessage, 96)) + '</div>' +
+                        '<div class="line2"><strong>AI:</strong> ' + esc(short(s.lastAssistantMessage, 96)) + '</div>' +
+                    '</div>';
+            }).join('');
+
+            listEl.querySelectorAll('.row').forEach(function (row) {
+                row.addEventListener('click', function () {
+                    const id = row.getAttribute('data-id');
+                    if (!id) return;
+                    void openSession(id, { pushUrl: true });
+                });
+            });
+
+            const activeRow = listEl.querySelector('.row.active');
+            if (activeRow) activeRow.scrollIntoView({ block: 'nearest' });
+
+            updateNavButtons();
+        }
+
+        function renderChatState(text, isError) {
+            chatEl.innerHTML = '<div class="state' + (isError ? ' error' : '') + '">' + esc(text) + '</div>';
+            currentChatCopyPayload = '';
+            if (copyChatBtn) {
+                copyChatBtn.disabled = true;
+                copyChatBtn.textContent = 'Копия чата';
+            }
+        }
+
+        async function loadSessions(options) {
+            const opts = options || {};
+            if (listController) listController.abort();
+            listController = new AbortController();
+
+            listEl.innerHTML = '<div class="state">Загрузка списка чатов…</div>';
+            setSessionStats(0, 0);
+            try {
+                const data = await fetchJson('/api/ai-chats/sessions?limit=200', { signal: listController.signal });
+                sessions = Array.isArray(data.sessions) ? data.sessions : [];
+                sortSessionsInPlace();
+                rebuildFilterOptions();
+
+                const sidFromUrl = getSidFromUrl();
+                if (sidFromUrl) selectedId = sidFromUrl;
+                if (!selectedId && sessions[0]) selectedId = sessions[0].id;
+                if (selectedId && !sessions.find(function (s) { return s.id === selectedId; })) {
+                    selectedId = sessions[0] ? sessions[0].id : null;
+                    if (selectedId) setSidInUrl(selectedId, true);
+                }
+
+                renderList();
+                saveState();
+
+                if (!selectedId) {
+                    activeSessionChainIds = [];
+                    chatTitleEl.textContent = 'Диалог';
+                    chatMetaEl.textContent = 'Выбери сессию';
+                    renderChatState('Диалог не выбран.', false);
+                    return;
+                }
+
+                if (isMobile() && !opts.stayInList) {
+                    setMobileView('chat');
+                }
+
+                await openSession(selectedId, { pushUrl: false, replaceUrl: true });
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+                sessions = [];
+                activeSessionChainIds = [];
+                setSessionStats(0, 0);
+                listEl.innerHTML = '<div class="state error">Ошибка загрузки сессий: ' + esc(err.message || String(err)) + '</div>';
+                renderChatState('Не удалось загрузить диалоги.', true);
+            }
+        }
+
+        async function openSession(id, options) {
+            const opts = options || {};
+            selectedId = id;
+            renderList();
+            saveState();
+
+            if (opts.pushUrl) setSidInUrl(id, false);
+            if (opts.replaceUrl) setSidInUrl(id, true);
+            if (isMobile()) setMobileView('chat');
+
+            renderChatState('Загрузка диалога…', false);
+            const seq = ++detailsSeq;
+
+            try {
+                const data = await fetchJson('/api/ai-chats/sessions/' + encodeURIComponent(id));
+                if (seq !== detailsSeq) return;
+
+                const session = data && data.session ? data.session : null;
+                if (!session) {
+                    setSidInUrl(null, true);
+                    if (isMobile()) setMobileView('list');
+                    throw new Error('Сессия не найдена');
+                }
+
+                const user = session.user ? (session.user.name || session.user.email || session.user.id || '—') : '—';
+                const chain = session.sessionChain && Array.isArray(session.sessionChain.ids) ? session.sessionChain.ids : [];
+                activeSessionChainIds = chain.length ? chain : [session.id];
+                const isStitched = Boolean(session.sessionChain && session.sessionChain.stitched && activeSessionChainIds.length > 1);
+                const visibleIdx = visibleSessions.findIndex(function (s) { return s.id === session.id; });
+                const positionText = visibleSessions.length
+                    ? (visibleIdx >= 0
+                        ? (' · позиция ' + (visibleIdx + 1) + ' из ' + visibleSessions.length)
+                        : (' · вне фильтра (видно ' + visibleSessions.length + ')'))
+                    : '';
+
+                chatTitleEl.textContent = isStitched
+                    ? ('Сессия ' + session.id + ' (цепочка ' + activeSessionChainIds.length + ')')
+                    : ('Сессия ' + session.id);
+                chatMetaEl.textContent = 'User: ' + user + ' · ' + fmtDate(session.lastMessageAt) + (isStitched ? ' · склейка смежных сессий' : '') + positionText;
+
+                const turns = Array.isArray(session.turns) ? session.turns : [];
+                if (!turns.length) {
+                    renderChatState('В этой сессии пока нет сообщений.', false);
+                    const basicMeta = [
+                        'Сессия: ' + String(session.id || ''),
+                        'User: ' + String(user || '—'),
+                        'Дата: ' + String(fmtDate(session.lastMessageAt || ''))
+                    ].join('\n');
+                    currentChatCopyPayload = basicMeta;
+                    if (copyChatBtn) {
+                        copyChatBtn.disabled = false;
+                        copyChatBtn.textContent = 'Копия чата';
+                    }
+                    return;
+                }
+
+                copyPayloadById = new Map();
+                let prevSessionId = null;
+                const copyLines = [];
+                copyLines.push('Сессия: ' + String(session.id || ''));
+                copyLines.push('User: ' + String(user || '—'));
+                copyLines.push('Дата: ' + String(fmtDate(session.lastMessageAt || '')));
+                copyLines.push('');
+                chatEl.innerHTML = turns.map(function (t) {
+                    const turnSessionId = String(t.sessionId || '').trim();
+                    const sessionSplit = isStitched && turnSessionId && turnSessionId !== prevSessionId
+                        ? '<div class="turn-meta">Сессия: ' + esc(turnSessionId) + '</div>'
+                        : '';
+                    prevSessionId = turnSessionId || prevSessionId;
+                    const copyId = String(t.id || (turnSessionId + ':' + String(t.turnIndex || 0)));
+                    copyPayloadById.set(copyId, String(t.assistantMessage || '—'));
+                    copyLines.push('Ход #' + String(t.turnIndex || 0) + ' · ' + String(fmtDate(t.createdAt || '')));
+                    copyLines.push('Вы: ' + String(t.userMessage || ''));
+                    copyLines.push('Ассистент: ' + String(t.assistantMessage || '—'));
+                    copyLines.push('');
+                    return '' +
+                        '<div class="turn">' +
+                            sessionSplit +
+                            '<div class="turn-head">' +
+                                '<div class="turn-meta">Ход #' + esc(String(t.turnIndex || 0)) + ' · ' + esc(fmtDate(t.createdAt)) + '</div>' +
+                                '<button type="button" class="turn-copy-btn" data-copy-id="' + esc(copyId) + '">Копия AI</button>' +
+                            '</div>' +
+                            '<div class="bubble user"><strong>Вы:</strong>\n' + esc(t.userMessage || '') + '</div>' +
+                            '<div class="bubble assistant"><strong>Ассистент:</strong>\n' + linkifyCompanyPaths(t.assistantMessage || '—') + '</div>' +
+                        '</div>';
+                }).join('');
+                chatEl.querySelectorAll('.turn-copy-btn').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        const copyId = String(btn.getAttribute('data-copy-id') || '').trim();
+                        if (!copyId) return;
+                        void copyRawTextById(copyId, btn);
+                    });
+                });
+                currentChatCopyPayload = copyLines.join('\n').trim();
+                if (copyChatBtn) {
+                    copyChatBtn.disabled = !currentChatCopyPayload;
+                    copyChatBtn.textContent = 'Копия чата';
+                }
+                chatEl.scrollTop = 0;
+            } catch (err) {
+                if (seq !== detailsSeq) return;
+                activeSessionChainIds = [];
+                renderChatState('Ошибка загрузки диалога: ' + (err.message || String(err)), true);
+            }
+        }
+
+        function openNeighbour(offset) {
+            if (!visibleSessions.length) return;
+            const idx = visibleSessions.findIndex(function (s) { return s.id === selectedId; });
+            const chainSet = new Set(activeSessionChainIds || []);
+            if (idx < 0) {
+                const fallback = offset < 0 ? visibleSessions[visibleSessions.length - 1] : visibleSessions[0];
+                if (!fallback) return;
+                void openSession(fallback.id, { pushUrl: true });
+                return;
+            }
+            let nextIdx = idx + offset;
+            let guard = 0;
+            while (guard < visibleSessions.length) {
+                if (nextIdx < 0 || nextIdx >= visibleSessions.length) {
+                    if (!navWrap) return;
+                    nextIdx = offset > 0 ? 0 : (visibleSessions.length - 1);
+                }
+                if (!chainSet.has(visibleSessions[nextIdx].id)) break;
+                nextIdx += offset;
+                guard += 1;
+            }
+            if (guard >= visibleSessions.length) return;
+            void openSession(visibleSessions[nextIdx].id, { pushUrl: true });
+        }
+
+        function openBoundary(direction) {
+            if (!visibleSessions.length) return;
+            const chainSet = new Set(activeSessionChainIds || []);
+            if (direction < 0) {
+                for (let i = 0; i < visibleSessions.length; i += 1) {
+                    if (!chainSet.has(visibleSessions[i].id)) {
+                        void openSession(visibleSessions[i].id, { pushUrl: true });
+                        return;
+                    }
+                }
+                void openSession(visibleSessions[0].id, { pushUrl: true });
+                return;
+            }
+            for (let i = visibleSessions.length - 1; i >= 0; i -= 1) {
+                if (!chainSet.has(visibleSessions[i].id)) {
+                    void openSession(visibleSessions[i].id, { pushUrl: true });
+                    return;
+                }
+            }
+            void openSession(visibleSessions[visibleSessions.length - 1].id, { pushUrl: true });
+        }
+
+        reloadBtn.addEventListener('click', function () { void loadSessions({ stayInList: true }); });
+        searchInput.addEventListener('input', function () {
+            renderList();
+            setSearchInUrl(String(searchInput.value || '').trim(), true);
+            saveState();
+        });
+        if (sortSelect) {
+            sortSelect.addEventListener('change', function () {
+                applySort(sortSelect.value, true);
+            });
+        }
+        if (quickSortChips) {
+            quickSortChips.querySelectorAll('button[data-sort]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const key = btn.getAttribute('data-sort');
+                    applySort(key, true);
+                });
+            });
+        }
+        if (userFilterSelect) {
+            userFilterSelect.addEventListener('change', function () {
+                currentUserFilter = normalizeKey(userFilterSelect.value);
+                renderList();
+                setUserFilterInUrl(currentUserFilter, true);
+                saveState();
+            });
+        }
+        if (sourceFilterSelect) {
+            sourceFilterSelect.addEventListener('change', function () {
+                currentSourceFilter = normalizeKey(sourceFilterSelect.value);
+                renderList();
+                setSourceFilterInUrl(currentSourceFilter, true);
+                saveState();
+            });
+        }
+        if (periodFilterSelect) {
+            periodFilterSelect.addEventListener('change', function () {
+                currentPeriodFilter = normalizePeriod(periodFilterSelect.value);
+                renderList();
+                setPeriodFilterInUrl(currentPeriodFilter, true);
+                saveState();
+            });
+        }
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                currentUserFilter = '';
+                currentSourceFilter = '';
+                currentPeriodFilter = 'all';
+                if (userFilterSelect) userFilterSelect.value = '';
+                if (sourceFilterSelect) sourceFilterSelect.value = '';
+                if (periodFilterSelect) periodFilterSelect.value = 'all';
+                renderList();
+                setSearchInUrl('', true);
+                setUserFilterInUrl('', true);
+                setSourceFilterInUrl('', true);
+                setPeriodFilterInUrl('all', true);
+                saveState();
+            });
+        }
+        if (showSelectedBtn) {
+            showSelectedBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                currentUserFilter = '';
+                currentSourceFilter = '';
+                currentPeriodFilter = 'all';
+                if (userFilterSelect) userFilterSelect.value = '';
+                if (sourceFilterSelect) sourceFilterSelect.value = '';
+                if (periodFilterSelect) periodFilterSelect.value = 'all';
+                renderList();
+                setSearchInUrl('', true);
+                setUserFilterInUrl('', true);
+                setSourceFilterInUrl('', true);
+                setPeriodFilterInUrl('all', true);
+                saveState();
+                if (selectedId) void openSession(selectedId, { pushUrl: false });
+            });
+        }
+        if (listFiltersToggleBtn) {
+            listFiltersToggleBtn.addEventListener('click', function () {
+                setListFiltersOpen(!listFiltersOpen);
+                saveState();
+            });
+        }
+        backBtn.addEventListener('click', function () {
+            if (!isMobile()) return;
+            setMobileView('list');
+            setSidInUrl(null, false);
+        });
+        if (copyChatBtn) {
+            copyChatBtn.addEventListener('click', function () {
+                if (!currentChatCopyPayload) return;
+                void copyTextWithFallback(currentChatCopyPayload).then(function (ok) {
+                    if (ok) flashButtonCopied(copyChatBtn, 'Копия чата');
+                });
+            });
+        }
+        if (wrapNavBtn) {
+            wrapNavBtn.addEventListener('click', function () {
+                navWrap = !navWrap;
+                updateWrapUi();
+                setWrapInUrl(navWrap, true);
+                saveState();
+            });
+        }
+        if (firstBtn) firstBtn.addEventListener('click', function () { openBoundary(-1); });
+        prevBtn.addEventListener('click', function () { openNeighbour(-1); });
+        nextBtn.addEventListener('click', function () { openNeighbour(1); });
+        if (lastBtn) lastBtn.addEventListener('click', function () { openBoundary(1); });
+        if (mobileListBtn) mobileListBtn.addEventListener('click', function () { setMobileView('list'); });
+        if (mobilePrevBtn) mobilePrevBtn.addEventListener('click', function () { openNeighbour(-1); });
+        if (mobileNextBtn) mobileNextBtn.addEventListener('click', function () { openNeighbour(1); });
+        if (mobileReloadBtn) mobileReloadBtn.addEventListener('click', function () {
+            const inList = document.body.getAttribute('data-mobile-view') === 'list';
+            void loadSessions({ stayInList: inList });
+        });
+
+        window.addEventListener('keydown', function (e) {
+            const target = e.target;
+            const isTyping = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
+            if (isTyping) return;
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                openNeighbour(-1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                openNeighbour(1);
+            } else if (e.key === 'Escape' && isMobile()) {
+                setMobileView('list');
+                setSidInUrl(null, false);
+            } else if (e.key.toLowerCase() === 'j') {
+                e.preventDefault();
+                openNeighbour(1);
+            } else if (e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                openNeighbour(-1);
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                openBoundary(-1);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                openBoundary(1);
+            }
+        });
+
+        window.addEventListener('popstate', function () {
+            const sid = getSidFromUrl();
+            const q = getSearchFromUrl();
+            const sortFromUrl = getSortFromUrl() || 'date_desc';
+            const userFromUrl = getUserFilterFromUrl();
+            const sourceFromUrl = getSourceFilterFromUrl();
+            const periodFromUrl = getPeriodFilterFromUrl() || 'all';
+            const wrapFromUrl = getWrapFromUrl();
+            const qChanged = String(searchInput.value || '') !== q;
+            if (qChanged) {
+                searchInput.value = q;
+            }
+            const nextSort = normalizeSort(sortFromUrl);
+            const sortChanged = normalizeSort(currentSort) !== nextSort;
+            if (sortChanged) {
+                currentSort = nextSort;
+                syncSortUi();
+                sortSessionsInPlace();
+            }
+            const nextUser = normalizeKey(userFromUrl || '');
+            const nextSource = normalizeKey(sourceFromUrl || '');
+            const nextPeriod = normalizePeriod(periodFromUrl);
+            const userChanged = normalizeKey(currentUserFilter) !== nextUser;
+            const sourceChanged = normalizeKey(currentSourceFilter) !== nextSource;
+            const periodChanged = normalizePeriod(currentPeriodFilter) !== nextPeriod;
+            if (userChanged) currentUserFilter = nextUser;
+            if (sourceChanged) currentSourceFilter = nextSource;
+            if (periodChanged) currentPeriodFilter = nextPeriod;
+            const nextWrap = wrapFromUrl === null ? false : !!wrapFromUrl;
+            const wrapChanged = !!navWrap !== nextWrap;
+            if (wrapChanged) {
+                navWrap = nextWrap;
+                updateWrapUi();
+            }
+            if (userFilterSelect) {
+                userFilterSelect.value = currentUserFilter;
+                currentUserFilter = normalizeKey(userFilterSelect.value);
+            }
+            if (sourceFilterSelect) {
+                sourceFilterSelect.value = currentSourceFilter;
+                currentSourceFilter = normalizeKey(sourceFilterSelect.value);
+            }
+            if (periodFilterSelect) {
+                periodFilterSelect.value = currentPeriodFilter;
+                currentPeriodFilter = normalizePeriod(periodFilterSelect.value);
+            }
+            if (qChanged || sortChanged || userChanged || sourceChanged || periodChanged || wrapChanged) {
+                renderList();
+            }
+            if (!sid) {
+                if (isMobile()) setMobileView('list');
+                selectedId = null;
+                renderList();
+                return;
+            }
+            if (isMobile()) setMobileView('chat');
+            if (sessions.find(function (s) { return s.id === sid; })) {
+                void openSession(sid, { pushUrl: false });
+            } else {
+                selectedId = sid;
+                void loadSessions({ stayInList: false });
+            }
+        });
+
+        mobileMedia.addEventListener('change', function () {
+            if (!isMobile()) {
+                setMobileView('list');
+                setListFiltersOpen(listFiltersOpen);
+            } else {
+                setListFiltersOpen(listFiltersOpen);
+                if (selectedId) setMobileView('chat');
+            }
+        });
+
+        const restored = restoreState();
+        const sid = getSidFromUrl() || (restored && restored.sid) || null;
+        const q = getSearchFromUrl() || (restored && restored.q) || '';
+        const sortFromUrl = getSortFromUrl();
+        const userFilterFromUrl = getUserFilterFromUrl();
+        const sourceFilterFromUrl = getSourceFilterFromUrl();
+        const periodFromUrl = getPeriodFilterFromUrl();
+        const wrapFromUrl = getWrapFromUrl();
+        const initialSort = normalizeSort(sortFromUrl || (restored && restored.sort) || 'date_desc');
+        currentSort = initialSort;
+        syncSortUi();
+        currentUserFilter = normalizeKey(userFilterFromUrl !== null ? userFilterFromUrl : ((restored && restored.userFilter) || ''));
+        currentSourceFilter = normalizeKey(sourceFilterFromUrl !== null ? sourceFilterFromUrl : ((restored && restored.sourceFilter) || ''));
+        currentPeriodFilter = normalizePeriod(periodFromUrl !== null ? periodFromUrl : ((restored && restored.periodFilter) || 'all'));
+        if (periodFilterSelect) periodFilterSelect.value = currentPeriodFilter;
+        navWrap = wrapFromUrl !== null ? !!wrapFromUrl : !!(restored && restored.wrapNav);
+        updateWrapUi();
+        listFiltersOpen = !!(restored && restored.listFiltersOpen);
+        if (!Object.prototype.hasOwnProperty.call(restored || {}, 'listFiltersOpen')) {
+            listFiltersOpen = false;
+        }
+        setListFiltersOpen(listFiltersOpen);
+
+        if (q) {
+            searchInput.value = q;
+            setSearchInUrl(q, true);
+        }
+        if (sortFromUrl || (restored && restored.sort)) {
+            setSortInUrl(currentSort, true);
+        }
+        if (userFilterFromUrl !== null || (restored && restored.userFilter)) {
+            setUserFilterInUrl(currentUserFilter, true);
+        }
+        if (sourceFilterFromUrl !== null || (restored && restored.sourceFilter)) {
+            setSourceFilterInUrl(currentSourceFilter, true);
+        }
+        if (periodFromUrl !== null || (restored && restored.periodFilter)) {
+            setPeriodFilterInUrl(currentPeriodFilter, true);
+        }
+        if (wrapFromUrl !== null || (restored && Object.prototype.hasOwnProperty.call(restored, 'wrapNav'))) {
+            setWrapInUrl(navWrap, true);
+        }
+        if (sid) {
+            selectedId = sid;
+            if (isMobile()) setMobileView('chat');
+        } else if (isMobile() && restored && restored.view === 'chat') {
+            setMobileView('list');
+        }
+
+        void loadSessions({ stayInList: !sid });
+    })();
+    </script>
+</body>
+</html>

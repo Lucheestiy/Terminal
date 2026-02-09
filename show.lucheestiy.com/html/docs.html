@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Документация | Show</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .docs-container {
+            display: flex;
+            min-height: calc(100vh - 65px);
+        }
+
+        .docs-sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            position: sticky;
+            top: 65px;
+            height: calc(100vh - 65px);
+            overflow-y: auto;
+        }
+
+        .docs-sidebar h4 {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .docs-sidebar h4:first-child {
+            margin-top: 0;
+        }
+
+        .docs-nav {
+            list-style: none;
+        }
+
+        .docs-nav li a {
+            display: block;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 0.25rem;
+            transition: background 0.2s;
+        }
+
+        .docs-nav li a:hover, .docs-nav li a.active {
+            background: var(--bg-light);
+        }
+
+        .docs-content {
+            flex: 1;
+            padding: 2rem 3rem;
+            max-width: 900px;
+        }
+
+        .docs-content h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .docs-content h2 {
+            font-size: 1.5rem;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .docs-content h3 {
+            font-size: 1.25rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .docs-content p {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .docs-content ul, .docs-content ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .docs-content li {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .docs-content code {
+            background: var(--bg-dark);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .docs-content pre {
+            background: var(--bg-dark);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+
+        .docs-content pre code {
+            padding: 0;
+            background: none;
+        }
+
+        .info-box {
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-box.warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: var(--accent);
+        }
+
+        .info-box h4 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box.warning h4 {
+            color: var(--accent);
+        }
+
+        .workflow-diagram {
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+
+        .workflow-steps {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .workflow-step {
+            background: var(--bg-card);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            border: 2px solid var(--border);
+        }
+
+        .workflow-step.active {
+            border-color: var(--primary);
+        }
+
+        .workflow-arrow {
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+        }
+    </style>
+        <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🎨</div>
+            <div class="logo-text">Show<span>.lucheestiy</span></div>
+        </div>
+        <nav>
+            <a href="index.html">Конструктор</a>
+            <a href="templates.html">Шаблоны</a>
+            <a href="docs.html" class="active">Документация</a>
+            <a href="examples.html">Примеры</a>
+            <a href="codex.html">Codex Live</a>
+            <a href="/ai-chats.html">AI чаты</a>
+            <a href="reports.html">Отчёты</a>
+            <a href="sn-auth.html">SN re-auth</a>
+        </nav>
+    </header>
+
+    <div class="docs-container">
+        <aside class="docs-sidebar">
+            <h4>Начало работы</h4>
+            <ul class="docs-nav">
+                <li><a href="#introduction" class="active">Введение</a></li>
+                <li><a href="#workflow">Рабочий процесс</a></li>
+                <li><a href="#how-to-use">Как использовать</a></li>
+            </ul>
+
+            <h4>Модули</h4>
+            <ul class="docs-nav">
+                <li><a href="#ai-assistant">ИИ Ассистент</a></li>
+                <li><a href="#crm">CRM Панель</a></li>
+                <li><a href="#analytics">Аналитика</a></li>
+                <li><a href="#notifications">Уведомления</a></li>
+                <li><a href="#payments">Платежи</a></li>
+                <li><a href="#auth">Авторизация</a></li>
+            </ul>
+
+            <h4>Интеграция</h4>
+            <ul class="docs-nav">
+                <li><a href="#biznes-integration">biznes.lucheestiy.com</a></li>
+                <li><a href="#api">Справочник API</a></li>
+            </ul>
+        </aside>
+
+        <main class="docs-content">
+            <h1 id="introduction">Введение</h1>
+            <p>
+                <strong>Show</strong> — это визуальная доска и конструктор модулей для планирования и прототипирования
+                новых функций для <code>biznes.lucheestiy.com</code>. Он позволяет администраторам и разработчикам
+                визуализировать, как будут выглядеть и работать новые модули до их реализации.
+            </p>
+
+            <div class="info-box">
+                <h4>Назначение</h4>
+                <p>Используйте этот инструмент для планирования, дизайна и обсуждения идей новых функций.
+                Перетаскивайте модули на холст, чтобы увидеть визуальные превью и получить пошаговые руководства по реализации.</p>
+            </div>
+
+            <h2 id="workflow">Рабочий процесс</h2>
+            <p>Типичный процесс добавления нового модуля в biznes.lucheestiy.com:</p>
+
+            <div class="workflow-diagram">
+                <div class="workflow-steps">
+                    <div class="workflow-step active">1. Дизайн в Show</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">2. Проверка плана</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">3. Экспорт шагов</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">4. Реализация</div>
+                    <span class="workflow-arrow">→</span>
+                    <div class="workflow-step">5. Деплой</div>
+                </div>
+            </div>
+
+            <h2 id="how-to-use">Как использовать</h2>
+            <ol>
+                <li><strong>Просмотрите модули</strong> в левой боковой панели</li>
+                <li><strong>Перетащите модули</strong> на центральный холст</li>
+                <li><strong>Посмотрите превью</strong>, чтобы увидеть как они будут выглядеть</li>
+                <li><strong>Изучите шаги реализации</strong> в правой панели</li>
+                <li><strong>Экспортируйте план</strong> как markdown файл</li>
+            </ol>
+
+            <h2 id="ai-assistant">Модуль ИИ Ассистента</h2>
+            <p>
+                Модуль ИИ Ассистента добавляет интеллектуального чат-бота на ваш сайт.
+                Он может отвечать на вопросы клиентов, оказывать поддержку и проводить пользователей через процессы.
+            </p>
+
+            <h3>Возможности</h3>
+            <ul>
+                <li>Понимание естественного языка</li>
+                <li>Контекстно-зависимые ответы</li>
+                <li>Интеграция с вашей базой знаний</li>
+                <li>Поддержка нескольких языков</li>
+            </ul>
+
+            <h3>Обзор реализации</h3>
+            <pre><code>// Пример: Инициализация ИИ чата
+const aiChat = new AIAssistant({
+    endpoint: '/api/chat',
+    context: 'biznes-support',
+    language: 'ru'
+});
+
+aiChat.on('message', (response) => {
+    displayMessage(response);
+});</code></pre>
+
+            <h2 id="crm">Модуль CRM Панели</h2>
+            <p>
+                Панель управления взаимоотношениями с клиентами для отслеживания лидов,
+                клиентов и бизнес-метрик.
+            </p>
+
+            <h3>Возможности</h3>
+            <ul>
+                <li>Управление базой данных клиентов</li>
+                <li>Отслеживание и скоринг лидов</li>
+                <li>Визуализация воронки продаж</li>
+                <li>Генерация отчётов</li>
+            </ul>
+
+            <h2 id="analytics">Модуль Аналитики</h2>
+            <p>
+                Комплексное решение для аналитики, отслеживающее поведение пользователей,
+                конверсии и бизнес-метрики.
+            </p>
+
+            <h2 id="notifications">Модуль Уведомлений</h2>
+            <p>
+                Система уведомлений в реальном времени с поддержкой внутренних оповещений,
+                push-уведомлений и доставки по email.
+            </p>
+
+            <h2 id="payments">Модуль Платежей</h2>
+            <p>
+                Безопасная обработка платежей с поддержкой различных платёжных провайдеров
+                и валют.
+            </p>
+
+            <div class="info-box warning">
+                <h4>Важно по безопасности</h4>
+                <p>Интеграция платежей требует соответствия PCI. Всегда используйте безопасные,
+                сертифицированные платёжные процессоры и никогда не храните данные карт в открытом виде.</p>
+            </div>
+
+            <h2 id="auth">Модуль Авторизации</h2>
+            <p>
+                Система аутентификации и авторизации пользователей с поддержкой
+                различных методов входа.
+            </p>
+
+            <h2 id="biznes-integration">Интеграция с biznes.lucheestiy.com</h2>
+            <p>
+                После проектирования модулей в Show, следуйте этим шагам для их интеграции
+                в основной сайт biznes.lucheestiy.com:
+            </p>
+
+            <ol>
+                <li>Экспортируйте план реализации из Show</li>
+                <li>Создайте новую ветку в репозитории biznes</li>
+                <li>Следуйте пошаговому руководству по реализации</li>
+                <li>Протестируйте локально с помощью Docker</li>
+                <li>Разверните через стандартный процесс деплоя</li>
+            </ol>
+
+            <h2 id="api">Справочник API</h2>
+            <p>Скоро: Полная документация API для всех модулей.</p>
+        </main>
+    </div>
+</body>
+</html>

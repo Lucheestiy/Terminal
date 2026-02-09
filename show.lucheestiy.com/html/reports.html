@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devloop отчёты | Show</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/reports.css?v=3">
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🎨</div>
+            <div class="logo-text">Show<span>.lucheestiy</span></div>
+        </div>
+        <nav>
+            <a href="/index.html">Конструктор</a>
+            <a href="/templates.html">Шаблоны</a>
+            <a href="/docs.html">Документация</a>
+            <a href="/examples.html">Примеры</a>
+            <a href="/codex.html">Codex Live</a>
+            <a href="/ai-chats.html">AI чаты</a>
+            <a href="/reports.html" class="active">Отчёты</a>
+            <a href="/sn-auth.html">SN re-auth</a>
+        </nav>
+    </header>
+
+    <div class="reports-container">
+        <aside class="reports-sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-title">
+                    <h3>Devloop отчёты</h3>
+                    <div id="apiStatus" class="muted">подключение…</div>
+                </div>
+
+                <div class="sidebar-controls">
+                    <select id="projectSelect" aria-label="Project"></select>
+                    <div class="row" style="margin-top: 0.5rem;">
+                        <input id="searchInput" type="search" placeholder="Фильтр (branch, commit, run id)" aria-label="Search" />
+                        <button id="refreshBtn" class="btn btn-secondary btn-sm" type="button">Обновить</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="runsList" class="runsList" aria-label="Runs"></div>
+        </aside>
+
+        <main class="reports-main">
+            <div class="run-toolbar">
+                <div class="run-titles">
+                    <div id="runTitle" class="run-title">—</div>
+                    <div id="runMeta" class="run-meta"></div>
+                </div>
+                <div class="run-actions">
+                    <a id="openDevBtn" class="btn btn-secondary btn-sm" href="#" target="_blank" rel="noopener">Dev</a>
+                    <button id="copyLinkBtn" class="btn btn-secondary btn-sm" type="button">Скопировать ссылку</button>
+                </div>
+            </div>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h3>SUMMARY.md</h3>
+                    <div id="statusBadges" class="runMetaLine"></div>
+                </div>
+                <div id="summary" class="summary"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h3>Artifacts</h3>
+                    <div id="filesMeta" class="muted"></div>
+                </div>
+                <div id="files" class="files"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/js/reports.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шаблоны | Show</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+
+        .template-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .template-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .template-preview {
+            height: 200px;
+            background: var(--bg-dark);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .template-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .template-preview .preview-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-dark));
+        }
+
+        .template-info {
+            padding: 1.25rem;
+        }
+
+        .template-info h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .template-info p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .template-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: var(--bg-light);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .page-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+        }
+    </style>
+        <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🎨</div>
+            <div class="logo-text">Show<span>.lucheestiy</span></div>
+        </div>
+        <nav>
+            <a href="index.html">Конструктор</a>
+            <a href="templates.html" class="active">Шаблоны</a>
+            <a href="docs.html">Документация</a>
+            <a href="examples.html">Примеры</a>
+            <a href="codex.html">Codex Live</a>
+            <a href="/ai-chats.html">AI чаты</a>
+            <a href="reports.html">Отчёты</a>
+            <a href="sn-auth.html">SN re-auth</a>
+        </nav>
+    </header>
+
+    <div class="page-header">
+        <h1>Готовые шаблоны</h1>
+        <p>Готовые комбинации модулей для типичных задач</p>
+    </div>
+
+    <div class="templates-grid">
+        <div class="template-card" onclick="location.href='index.html?template=ecommerce'">
+            <div class="template-preview">
+                <div class="preview-placeholder">🛒</div>
+            </div>
+            <div class="template-info">
+                <h3>Улучшение интернет-магазина</h3>
+                <p>Полное улучшение e-commerce с платежами, аналитикой и уведомлениями для клиентов.</p>
+                <div class="template-tags">
+                    <span class="tag">Платежи</span>
+                    <span class="tag">Аналитика</span>
+                    <span class="tag">Уведомления</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card" onclick="location.href='index.html?template=support'">
+            <div class="template-preview">
+                <div class="preview-placeholder">💬</div>
+            </div>
+            <div class="template-info">
+                <h3>Поддержка клиентов</h3>
+                <p>Система поддержки на базе ИИ с чат-ботом, тикетами и базой знаний.</p>
+                <div class="template-tags">
+                    <span class="tag">ИИ Ассистент</span>
+                    <span class="tag">CRM</span>
+                    <span class="tag">Уведомления</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card" onclick="location.href='index.html?template=analytics'">
+            <div class="template-preview">
+                <div class="preview-placeholder">📊</div>
+            </div>
+            <div class="template-info">
+                <h3>Бизнес-аналитика</h3>
+                <p>Комплексная аналитика и отчётность для принятия решений на основе данных.</p>
+                <div class="template-tags">
+                    <span class="tag">Аналитика</span>
+                    <span class="tag">CRM</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card" onclick="location.href='index.html?template=auth'">
+            <div class="template-preview">
+                <div class="preview-placeholder">🔐</div>
+            </div>
+            <div class="template-info">
+                <h3>Управление пользователями</h3>
+                <p>Полная система авторизации и управления пользователями.</p>
+                <div class="template-tags">
+                    <span class="tag">Авторизация</span>
+                    <span class="tag">Уведомления</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card" onclick="location.href='index.html?template=full'">
+            <div class="template-preview">
+                <div class="preview-placeholder">🚀</div>
+            </div>
+            <div class="template-info">
+                <h3>Полная платформа</h3>
+                <p>Все модули вместе для создания полноценной бизнес-платформы.</p>
+                <div class="template-tags">
+                    <span class="tag">Все модули</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="template-card" onclick="location.href='index.html'">
+            <div class="template-preview">
+                <div class="preview-placeholder">✨</div>
+            </div>
+            <div class="template-info">
+                <h3>Начать с нуля</h3>
+                <p>Создайте свою собственную комбинацию модулей.</p>
+                <div class="template-tags">
+                    <span class="tag">Свой проект</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

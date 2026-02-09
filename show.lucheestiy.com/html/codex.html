@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codex Live Vision | Show</title>
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/codex-vision-enhanced.css?v=2">
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🎨</div>
+            <div class="logo-text">Show<span>.lucheestiy</span></div>
+        </div>
+        <nav>
+            <a href="/index.html">Конструктор</a>
+            <a href="/templates.html">Шаблоны</a>
+            <a href="/docs.html">Документация</a>
+            <a href="/examples.html">Примеры</a>
+            <a href="/codex.html" class="active">Codex Live</a>
+            <a href="/ai-chats.html">AI чаты</a>
+            <a href="/reports.html">Отчёты</a>
+            <a href="/sn-auth.html">SN re-auth</a>
+        </nav>
+    </header>
+
+    <div class="codex-layout">
+        <aside class="codex-sidebar">
+            <div class="codex-sidebar-header">
+                <h3 id="sidebarTitle">Потоки Codex</h3>
+                <button id="refreshBtn" class="btn btn-secondary btn-sm" type="button">Обновить</button>
+            </div>
+
+            <div class="sidebar-group">
+                <button id="systemBtn" class="sessionBtn active" type="button" data-stream="system">
+                    <div class="sessionTop">
+                        <span id="systemStreamName" class="sessionName">Общий codex-tui.log</span>
+                        <span id="systemStreamPill" class="pill">система</span>
+                    </div>
+                    <div id="systemStreamMeta" class="sessionMeta">Общий лог (может перемешиваться)</div>
+                </button>
+            </div>
+
+            <div id="sessionsTitle" class="sidebarSectionTitle">Сессии rollout</div>
+            <div id="sessions" class="sessions" aria-label="Codex sessions list"></div>
+
+            <div class="codex-sidebar-footer">
+                <div class="hint">
+                    <div id="hintTitle" class="hintTitle">💡 Подсказка</div>
+                    <div id="hintText" class="hintText">
+                        <kbd>?</kbd> — горячие клавиши<br>
+                        <kbd>Shift</kbd>+<kbd>F</kbd> — файлы<br>
+                        <kbd>Shift</kbd>+<kbd>C</kbd> — команды<br>
+                        🔊 — звуковые эффекты
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="codex-main">
+            <div class="codex-toolbar">
+                <div class="selected">
+                    <div class="selectedTitle" id="selectedTitle">Подключение…</div>
+                    <div class="selectedMeta" id="selectedMeta"></div>
+                </div>
+
+                <div class="controls">
+                    <div class="segmented" role="group" aria-label="Language">
+                        <button id="langRu" class="segmentedBtn active" type="button">RU</button>
+                        <button id="langEn" class="segmentedBtn" type="button">EN</button>
+                    </div>
+                    <button id="pauseBtn" class="btn btn-secondary btn-sm" type="button">Пауза</button>
+                    <button id="clearBtn" class="btn btn-secondary btn-sm" type="button">Очистить</button>
+                    <label class="toggle">
+                        <input id="showText" type="checkbox" />
+                        <span id="toggleTextLabel">Текст</span>
+                    </label>
+                    <label class="toggle">
+                        <input id="showFeed" type="checkbox" checked />
+                        <span id="toggleFeedLabel">Лента</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="codex-stage" aria-label="Codex live visualization">
+                <canvas id="flowCanvas"></canvas>
+                <div class="hud">
+                    <div class="hudRow">
+                        <div class="hudItem">
+                            <div id="hudEventsPerMin" class="hudLabel">События/мин</div>
+                            <div class="hudValue" id="rate">0</div>
+                        </div>
+                        <div class="hudItem">
+                            <div id="hudLastEvent" class="hudLabel">Последнее</div>
+                            <div class="hudValue" id="lastEvent">—</div>
+                        </div>
+                    </div>
+                    <div class="hudRow">
+                        <div class="hudItem" style="flex: 1;">
+                            <div id="hudPromptLabel" class="hudLabel">Запрос</div>
+                            <div class="hudValue hudValueSmall" id="hudPrompt">—</div>
+                        </div>
+                        <div class="hudItem" style="flex: 1;">
+                            <div id="hudToolLabel" class="hudLabel">Инструмент</div>
+                            <div class="hudValue hudValueSmall" id="hudTool">—</div>
+                        </div>
+                    </div>
+                    <div class="hudRow">
+                        <div id="hudChipUser" class="hudChip user" title="Нажмите для пульсации">Пользователь</div>
+                        <div id="hudChipAssistant" class="hudChip assistant" title="Нажмите для пульсации">Ассистент</div>
+                        <div id="hudChipTools" class="hudChip tool" title="Нажмите для пульсации">Инструменты</div>
+                        <div id="hudChipOutput" class="hudChip out">Вывод</div>
+                        <div id="hudChipMeta" class="hudChip meta">Мета/Система</div>
+                    </div>
+                    <div class="hudRow">
+                        <div id="topTools" class="topTools" aria-label="Top tools"></div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="codex-footer">
+                <span id="status" class="status">Подключение…</span>
+                <span class="sep">•</span>
+                <span id="codexOrigin" class="muted"></span>
+            </footer>
+        </main>
+
+        <aside class="codex-feed" id="feedPanel">
+            <div class="feedHeader">
+                <h3 id="feedTitle">Лента событий</h3>
+                <div class="feedControls">
+                    <button id="expandBtn" class="btn btn-secondary btn-sm" type="button">Развернуть</button>
+                    <button id="collapseBtn" class="btn btn-secondary btn-sm" type="button">Свернуть</button>
+                </div>
+            </div>
+            <div id="events" class="events" aria-label="Live event feed"></div>
+        </aside>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+        <button id="fabFiles" class="fab fab-files" title="Файлы (Shift+F)">📁</button>
+        <button id="fabCommands" class="fab fab-commands" title="Команды (Shift+C)">⌨️</button>
+        <button id="fabSound" class="fab" title="Звук">🔇</button>
+        <button id="fabHelp" class="fab" title="Помощь (?)">❓</button>
+    </div>
+
+    <script src="/js/codex-vision-enhanced.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,476 @@
+/* =========================================================
+   Codex Live - Vision Edition ENHANCED
+   Cyberpunk/Glassmorphism aesthetic with tool animations
+   New: File tracking, Command history, Syntax highlighting
+   ========================================================= */
+
+/* Import base styles */
+@import url('codex-vision.css');
+
+/* =========================================================
+   Additional Panels (Files & Commands)
+   ========================================================= */
+.codex-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 320px;
+  animation: slideInRight 0.3s ease;
+}
+
+.codex-panel.hidden {
+  display: none;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.panelHeader {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.panelHeader h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+
+.codex-files .panelHeader h3 {
+  color: var(--neon-pink);
+  text-shadow: 0 0 10px rgba(255, 0, 170, 0.4);
+}
+
+.codex-commands .panelHeader h3 {
+  color: var(--neon-yellow);
+  text-shadow: 0 0 10px rgba(255, 238, 0, 0.4);
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.panelList {
+  padding: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* =========================================================
+   File Change Items
+   ========================================================= */
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  transition: all 0.25s;
+  cursor: pointer;
+}
+
+.file-item:hover {
+  transform: translateX(4px);
+  border-color: rgba(255, 0, 170, 0.3);
+  background: rgba(255, 0, 170, 0.05);
+}
+
+.file-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.file-path {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.file-badge {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+/* File type colors */
+.file-added {
+  border-left: 3px solid var(--neon-green);
+}
+.file-added .file-badge {
+  background: rgba(57, 255, 20, 0.15);
+  color: var(--neon-green);
+}
+
+.file-updated {
+  border-left: 3px solid var(--neon-orange);
+}
+.file-updated .file-badge {
+  background: rgba(255, 145, 0, 0.15);
+  color: var(--neon-orange);
+}
+
+.file-deleted {
+  border-left: 3px solid var(--neon-red);
+}
+.file-deleted .file-badge {
+  background: rgba(255, 51, 102, 0.15);
+  color: var(--neon-red);
+}
+
+.file-renamed {
+  border-left: 3px solid var(--neon-purple);
+}
+.file-renamed .file-badge {
+  background: rgba(184, 41, 255, 0.15);
+  color: var(--neon-purple);
+}
+
+.file-copied {
+  border-left: 3px solid var(--neon-cyan);
+}
+.file-copied .file-badge {
+  background: rgba(0, 229, 255, 0.15);
+  color: var(--neon-cyan);
+}
+
+/* =========================================================
+   Command History Items
+   ========================================================= */
+.command-item {
+  padding: 0.875rem;
+  margin-bottom: 0.6rem;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  transition: all 0.25s;
+  cursor: pointer;
+}
+
+.command-item:hover {
+  border-color: rgba(255, 238, 0, 0.3);
+  background: rgba(255, 238, 0, 0.05);
+}
+
+.command-item.expanded {
+  background: rgba(255, 238, 0, 0.08);
+}
+
+.command-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.command-status {
+  font-size: 0.9rem;
+}
+
+.command-tool {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.command-status-label {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.command-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.6rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 100px;
+  overflow-y: auto;
+  transition: max-height 0.3s;
+}
+
+.command-item.expanded .command-code {
+  max-height: 300px;
+}
+
+/* Command status colors */
+.command-executing {
+  border-left: 3px solid var(--neon-orange);
+}
+.command-executing .command-status-label {
+  background: rgba(255, 145, 0, 0.15);
+  color: var(--neon-orange);
+}
+
+.command-completed {
+  border-left: 3px solid var(--neon-green);
+}
+.command-completed .command-status-label {
+  background: rgba(57, 255, 20, 0.15);
+  color: var(--neon-green);
+}
+
+.command-failed {
+  border-left: 3px solid var(--neon-red);
+}
+.command-failed .command-status-label {
+  background: rgba(255, 51, 102, 0.15);
+  color: var(--neon-red);
+}
+
+/* =========================================================
+   Syntax Highlighting in Event Body
+   ========================================================= */
+.eventBody .json-key {
+  color: #9cdcfe;
+}
+
+.eventBody .json-string {
+  color: #ce9178;
+}
+
+.eventBody .json-number {
+  color: #b5cea8;
+}
+
+.eventBody .json-boolean {
+  color: #569cd6;
+}
+
+.eventBody .shell-prompt {
+  color: var(--neon-green);
+  font-weight: 600;
+}
+
+.eventBody .shell-command {
+  color: #ffee00;
+  font-weight: 600;
+}
+
+.eventBody .shell-flag {
+  color: #9cdcfe;
+}
+
+/* =========================================================
+   Enhanced Tool-Specific Event Styling
+   ========================================================= */
+.event.kind-tool_call[data-tool-name*="shell"] {
+  border-left-color: var(--neon-yellow);
+}
+.event.kind-tool_call[data-tool-name*="shell"] .eventKind {
+  border-color: rgba(255, 238, 0, 0.4);
+  color: var(--neon-yellow);
+  background: rgba(255, 238, 0, 0.08);
+}
+
+.event.kind-tool_call[data-tool-name*="patch"] {
+  border-left-color: var(--neon-pink);
+}
+.event.kind-tool_call[data-tool-name*="patch"] .eventKind {
+  border-color: rgba(255, 0, 170, 0.4);
+  color: var(--neon-pink);
+  background: rgba(255, 0, 170, 0.08);
+}
+
+.event.kind-tool_call[data-tool-name*="web"] {
+  border-left-color: #2dd4bf;
+}
+.event.kind-tool_call[data-tool-name*="web"] .eventKind {
+  border-color: rgba(45, 212, 191, 0.4);
+  color: #2dd4bf;
+  background: rgba(45, 212, 191, 0.08);
+}
+
+/* =========================================================
+   New Toolbar Toggles
+   ========================================================= */
+.toggle-files,
+.toggle-commands {
+  position: relative;
+}
+
+.toggle-files input:checked + span,
+.toggle-commands input:checked + span {
+  color: var(--neon-pink);
+}
+
+.toggle-commands input:checked + span {
+  color: var(--neon-yellow);
+}
+
+/* Pulse animation for active tools */
+@keyframes toolPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 145, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 145, 0, 0);
+  }
+}
+
+.tool-executing {
+  animation: toolPulse 1s ease-in-out infinite;
+}
+
+/* =========================================================
+   Responsive Updates
+   ========================================================= */
+@media (max-width: 1280px) {
+  .codex-layout {
+    grid-template-columns: 300px 1fr;
+  }
+
+  /* On narrow screens, panels become overlays so FAB controls still work */
+  .codex-feed,
+  .codex-panel {
+    position: fixed;
+    top: 65px;
+    right: 1rem;
+    bottom: 1rem;
+    width: min(420px, 95vw);
+    max-width: 100vw;
+    display: flex;
+    border-radius: 16px;
+    overflow: hidden;
+    z-index: 40;
+    box-shadow: 0 12px 45px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* =========================================================
+   Floating Action Buttons for Panels
+   ========================================================= */
+.fab-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  z-index: 50;
+}
+
+.fab {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  transition: all 0.25s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.fab:hover {
+  transform: scale(1.1);
+  border-color: rgba(0, 240, 255, 0.3);
+  color: var(--neon-blue);
+}
+
+.fab.active {
+  background: rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.4);
+  color: var(--neon-blue);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+.fab-files:hover,
+.fab-files.active {
+  border-color: rgba(255, 0, 170, 0.4);
+  color: var(--neon-pink);
+  background: rgba(255, 0, 170, 0.15);
+  box-shadow: 0 0 20px rgba(255, 0, 170, 0.2);
+}
+
+.fab-commands:hover,
+.fab-commands.active {
+  border-color: rgba(255, 238, 0, 0.4);
+  color: var(--neon-yellow);
+  background: rgba(255, 238, 0, 0.15);
+  box-shadow: 0 0 20px rgba(255, 238, 0, 0.2);
+}
+
+/* Badge for file/command count */
+.fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--neon-red);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(255, 51, 102, 0.4);
+}

@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  reports-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: show-reports-api
+    restart: unless-stopped
+    working_dir: /app
+    environment:
+      - PORT=3000
+      - MLWEB_ROOT=/data/mlweb
+      - MAX_FILE_BYTES=2000000
+      - CACHE_TTL_MS=5000
+      - AI_CHATS_DATABASE_URL=${AI_CHATS_DATABASE_URL:-postgresql://${AI_CHATS_DB_USER:-show_ai}:${AI_CHATS_DB_PASSWORD:-show_ai_change_me}@ai-chats-postgres:5432/${AI_CHATS_DB_NAME:-show_ai_chats}}
+      - SHOW_DATABASE_URL=${SHOW_DATABASE_URL:-}
+    volumes:
+      - /home/mlweb:/data/mlweb:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      ai-chats-postgres:
+        condition: service_started
+
+  ai-chats-postgres:
+    image: postgres:16-alpine
+    container_name: show-ai-chats-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${AI_CHATS_DB_USER:-show_ai}
+      - POSTGRES_PASSWORD=${AI_CHATS_DB_PASSWORD:-show_ai_change_me}
+      - POSTGRES_DB=${AI_CHATS_DB_NAME:-show_ai_chats}
+    volumes:
+      - show-ai-chats-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AI_CHATS_DB_USER:-show_ai} -d ${AI_CHATS_DB_NAME:-show_ai_chats}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: show-nginx
+    restart: unless-stopped
+    depends_on:
+      - reports-api
+    ports:
+      - "${HOST_PORT:-8110}:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  show-ai-chats-postgres-data:
