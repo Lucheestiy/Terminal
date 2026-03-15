@@ -2,6 +2,7 @@
 
 const state = {
   data: null,
+  prevData: null,
   selectedUnit: null,
   visibleUnits: [],
   auto: true,
@@ -12,6 +13,7 @@ const state = {
   connOnline: true,
   countdownTimer: null,
   countdownStart: 0,
+  chipFilter: "all",
   ui: {
     filter: "",
     show: "all",
@@ -305,6 +307,18 @@ const I18N = {
     fg_title: "Field Guide",
     fg_expand: "Expand",
     fg_collapse: "Collapse",
+    fleet_health: "Fleet Health",
+    chip_all: "All",
+    chip_active: "Active",
+    chip_inactive: "Inactive",
+    chip_issues: "Issues",
+    chip_clawdbot: "Clawdbot",
+    chip_droid: "Droid",
+    status_went_down: "{name} went down",
+    status_came_up: "{name} came back up",
+    status_restarting: "{name} is restarting",
+    trend_up: "+{pct}%",
+    trend_down: "{pct}%",
   },
   ru: {
     app_title: "Панель ботов",
@@ -479,6 +493,18 @@ const I18N = {
     fg_title: "Справочник полей",
     fg_expand: "Развернуть",
     fg_collapse: "Свернуть",
+    fleet_health: "Здоровье флота",
+    chip_all: "Все",
+    chip_active: "Активные",
+    chip_inactive: "Неактивные",
+    chip_issues: "С проблемами",
+    chip_clawdbot: "Clawdbot",
+    chip_droid: "Droid",
+    status_went_down: "{name} остановлен",
+    status_came_up: "{name} снова работает",
+    status_restarting: "{name} перезапускается",
+    trend_up: "+{pct}%",
+    trend_down: "{pct}%",
   },
 };
 
@@ -610,6 +636,8 @@ function setLanguage(lang) {
   if (state.data) {
     renderHeader(state.data);
     renderSummary(state.data);
+    renderFleetBar(state.data);
+    renderFilterChips(state.data);
     renderBotsTable(state.data);
     if (state.selectedUnit) {
       const still = (state.data.bots || []).find(b => b.unit === state.selectedUnit);
@@ -822,11 +850,16 @@ function renderSummary(data) {
   const dailyAll = Object.entries(dailyAgg).sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v);
 
   const hasErrors = (Number(s.errors24h) || 0) > 0;
+
+  const tokenTrend = calcTrend(dailyAll, "tokens");
+  const costTrend = calcTrend(dailyAll, "costUSD");
+  const errorTrend = calcTrend(dailyAll, "errors");
+
   const cards = [
-    { label: t("summary_bots"), value: fmtInt(s.botsTotal), sub: t("summary_bots_sub", { active: fmtInt(s.botsActive) }), spark: "", klass: "" },
-    { label: t("summary_tokens24h"), value: fmtInt(s.tokens24h), sub: t("summary_tokens_sub", { requests: fmtInt(s.requests24h) }), spark: renderPillSparkline(dailyAll, "tokens", "rgba(94,234,212,.5)"), klass: "" },
-    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: t("summary_cost_sub"), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)"), klass: "" },
-    { label: t("summary_errors24h"), value: fmtInt(s.errors24h), sub: t("summary_errors_sub"), spark: renderPillSparkline(dailyAll, "errors", "rgba(251,113,133,.5)"), klass: hasErrors ? "pillError" : "" },
+    { label: t("summary_bots"), value: fmtInt(s.botsTotal), sub: t("summary_bots_sub", { active: fmtInt(s.botsActive) }), spark: "", trend: "", klass: "" },
+    { label: t("summary_tokens24h"), value: fmtInt(s.tokens24h), sub: t("summary_tokens_sub", { requests: fmtInt(s.requests24h) }), spark: renderPillSparkline(dailyAll, "tokens", "rgba(94,234,212,.5)"), trend: trendHtml(tokenTrend), klass: "" },
+    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: t("summary_cost_sub"), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)"), trend: trendHtml(costTrend), klass: "" },
+    { label: t("summary_errors24h"), value: fmtInt(s.errors24h), sub: t("summary_errors_sub"), spark: renderPillSparkline(dailyAll, "errors", "rgba(251,113,133,.5)"), trend: trendHtml(errorTrend), klass: hasErrors ? "pillError" : "" },
   ];
 
   for (const c of cards) {
@@ -834,7 +867,7 @@ function renderSummary(data) {
     el.className = `pill ${c.klass || ""}`.trim();
     el.innerHTML = `
       <div class="pillLabel">${c.label}</div>
-      <div class="pillValue">${c.value}</div>
+      <div class="pillValue">${c.value}${c.trend || ""}</div>
       <div class="pillSub">${c.sub || ""}</div>
       ${c.spark || ""}
     `;
@@ -982,6 +1015,14 @@ function renderBotsTable(data) {
     const show = state.ui.show;
     if (show === "active") return (bot.systemd && bot.systemd.activeState) === "active";
     if (show === "issues") return botHasIssues(bot);
+
+    // Apply chip filter
+    const chip = state.chipFilter || "all";
+    if (chip === "active") return (bot.systemd && bot.systemd.activeState) === "active";
+    if (chip === "inactive") return (bot.systemd && bot.systemd.activeState) !== "active";
+    if (chip === "issues") return botHasIssues(bot);
+    if (chip === "clawdbot") return String(bot.type || "").toLowerCase().includes("clawdbot");
+    if (chip === "droid") return String(bot.type || "").toLowerCase().includes("droid");
     return true;
   });
 
@@ -2093,6 +2134,182 @@ function renderPillSparkline(dailyAll, key, color) {
   return `<div class="pillSparkline">${bars.join("")}</div>`;
 }
 
+/* ── Fleet Health Bar ── */
+function getFleetTooltipEl() {
+  let el = $("fleetTooltip");
+  if (el) return el;
+  el = document.createElement("div");
+  el.id = "fleetTooltip";
+  el.className = "fleetTooltip";
+  el.hidden = true;
+  document.body.appendChild(el);
+  return el;
+}
+
+function renderFleetBar(data) {
+  const bar = $("fleetBar");
+  const countsEl = $("fleetCounts");
+  if (!bar) return;
+  const bots = Array.isArray(data.bots) ? data.bots : [];
+  bar.innerHTML = "";
+
+  let goodCount = 0, warnCount = 0, badCount = 0;
+
+  for (const bot of bots) {
+    const seg = document.createElement("div");
+    seg.className = "fleetSeg";
+    const cls = statusDotClass(bot);
+    seg.classList.add(cls);
+    if (cls === "good") goodCount++;
+    else if (cls === "warn") warnCount++;
+    else badCount++;
+
+    if (state.selectedUnit === bot.unit) seg.classList.add("selected");
+
+    seg.addEventListener("click", () => toggleDetails(bot.unit));
+    seg.addEventListener("mouseenter", (e) => {
+      const tip = getFleetTooltipEl();
+      const sd = bot.systemd || {};
+      const statusLabel = `${systemdActiveLabel(sd.activeState)}${sd.subState ? " (" + systemdSubLabel(sd.subState) + ")" : ""}`;
+      const usage24 = getUsageWindow(bot, "24h") || {};
+      tip.textContent = `${bot.displayName || bot.unit}\n${statusLabel} • ${fmtInt(usage24.tokens)} tok • ${fmtMoneyUsd(usage24.costUSD)}`;
+      tip.style.whiteSpace = "pre";
+      tip.hidden = false;
+      const pad = 10;
+      let left = e.clientX + pad;
+      let top = e.clientY - 40;
+      const r = tip.getBoundingClientRect();
+      if (left + r.width + 8 > window.innerWidth) left = e.clientX - r.width - pad;
+      if (top < 8) top = 8;
+      tip.style.left = `${Math.max(8, left)}px`;
+      tip.style.top = `${Math.max(8, top)}px`;
+    });
+    seg.addEventListener("mousemove", (e) => {
+      const tip = getFleetTooltipEl();
+      if (tip.hidden) return;
+      const pad = 10;
+      let left = e.clientX + pad;
+      let top = e.clientY - 40;
+      const r = tip.getBoundingClientRect();
+      if (left + r.width + 8 > window.innerWidth) left = e.clientX - r.width - pad;
+      if (top < 8) top = 8;
+      tip.style.left = `${Math.max(8, left)}px`;
+      tip.style.top = `${Math.max(8, top)}px`;
+    });
+    seg.addEventListener("mouseleave", () => {
+      const tip = getFleetTooltipEl();
+      tip.hidden = true;
+    });
+
+    bar.appendChild(seg);
+  }
+
+  if (countsEl) {
+    countsEl.innerHTML = `
+      <span class="fleetCount"><span class="fleetCountDot" style="background:var(--good)"></span>${goodCount}</span>
+      <span class="fleetCount"><span class="fleetCountDot" style="background:var(--warn)"></span>${warnCount}</span>
+      <span class="fleetCount"><span class="fleetCountDot" style="background:var(--bad)"></span>${badCount}</span>
+    `;
+  }
+}
+
+/* ── Quick Filter Chips ── */
+function renderFilterChips(data) {
+  const el = $("filterChipsSection");
+  if (!el) return;
+  const bots = Array.isArray(data.bots) ? data.bots : [];
+
+  const counts = { all: bots.length, active: 0, inactive: 0, issues: 0, clawdbot: 0, droid: 0 };
+  for (const bot of bots) {
+    const active = (bot.systemd && bot.systemd.activeState) === "active";
+    if (active) counts.active++;
+    else counts.inactive++;
+    if (botHasIssues(bot)) counts.issues++;
+    const type = String(bot.type || "").toLowerCase();
+    if (type.includes("clawdbot")) counts.clawdbot++;
+    else if (type.includes("droid")) counts.droid++;
+  }
+
+  const chips = [
+    { key: "all", label: t("chip_all"), count: counts.all },
+    { key: "active", label: t("chip_active"), count: counts.active },
+    { key: "inactive", label: t("chip_inactive"), count: counts.inactive },
+    { key: "issues", label: t("chip_issues"), count: counts.issues },
+  ];
+  if (counts.clawdbot > 0) chips.push({ key: "clawdbot", label: t("chip_clawdbot"), count: counts.clawdbot });
+  if (counts.droid > 0) chips.push({ key: "droid", label: t("chip_droid"), count: counts.droid });
+
+  el.innerHTML = chips.map(c => {
+    const active = state.chipFilter === c.key ? "active" : "";
+    return `<button class="filterChip ${active}" data-chip="${c.key}">${escapeHtml(c.label)}<span class="filterChipCount">${c.count}</span></button>`;
+  }).join("");
+
+  for (const btn of el.querySelectorAll("[data-chip]")) {
+    btn.addEventListener("click", () => {
+      state.chipFilter = btn.dataset.chip || "all";
+      // Reset the show dropdown to "all" so they don't conflict
+      state.ui.show = "all";
+      const showSelect = $("showSelect");
+      if (showSelect) showSelect.value = "all";
+      lsSet("show", "all");
+      if (state.data) {
+        renderFilterChips(state.data);
+        renderBotsTable(state.data);
+      }
+    });
+  }
+}
+
+/* ── Status Change Detection ── */
+function detectStatusChanges(oldData, newData) {
+  if (!oldData || !oldData.bots || !newData || !newData.bots) return;
+  const oldMap = {};
+  for (const b of oldData.bots) oldMap[b.unit] = b;
+
+  for (const bot of newData.bots) {
+    const old = oldMap[bot.unit];
+    if (!old) continue;
+    const oldActive = String(old.systemd && old.systemd.activeState || "");
+    const newActive = String(bot.systemd && bot.systemd.activeState || "");
+    const name = bot.displayName || bot.unit;
+
+    if (oldActive === newActive) continue;
+
+    if (oldActive === "active" && newActive !== "active") {
+      if (newActive === "activating") {
+        showToast(t("status_restarting", { name }), "", { type: "warn", duration: 5000 });
+      } else {
+        showToast(t("status_went_down", { name }), `${systemdActiveLabel(newActive)}`, { type: "bad", duration: 6000 });
+      }
+    } else if (oldActive !== "active" && newActive === "active") {
+      showToast(t("status_came_up", { name }), "", { type: "good", duration: 4000 });
+    }
+  }
+}
+
+/* ── Summary Trend Indicators ── */
+function calcTrend(daily, key) {
+  if (!daily || daily.length < 2) return null;
+  const recent = daily.slice(-1)[0];
+  const prev = daily.slice(-2, -1)[0];
+  const cur = (recent && recent[key]) || 0;
+  const old = (prev && prev[key]) || 0;
+  if (old === 0 && cur === 0) return { dir: "flat", pct: 0 };
+  if (old === 0) return { dir: "up", pct: 100 };
+  const pct = Math.round(((cur - old) / old) * 100);
+  if (pct > 0) return { dir: "up", pct };
+  if (pct < 0) return { dir: "down", pct };
+  return { dir: "flat", pct: 0 };
+}
+
+function trendHtml(trend) {
+  if (!trend || trend.dir === "flat") return "";
+  const arrow = trend.dir === "up" ? "\u2191" : "\u2193";
+  const cls = trend.dir === "up" ? "up" : "down";
+  const pct = Math.abs(trend.pct);
+  return `<span class="pillTrend ${cls}">${arrow}${pct}%</span>`;
+}
+
 /* ── Keyboard shortcuts help ── */
 function showShortcuts() {
   const overlay = $("shortcutsOverlay");
@@ -2946,12 +3163,19 @@ async function refresh() {
     const r = await fetch("/api/bots", { cache: "no-store" });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const data = await r.json();
+
+    // Detect status changes before updating state
+    detectStatusChanges(state.data, data);
+
+    state.prevData = state.data;
     state.data = data;
     setConnStatus(true);
 
     renderHeader(data);
 
     renderSummary(data);
+    renderFleetBar(data);
+    renderFilterChips(data);
     renderBotsTable(data);
 
     if (state.selectedUnit) {
@@ -2991,7 +3215,22 @@ function setAuto(on) {
   if (ringEl) ringEl.style.display = on ? "" : "none";
 }
 
+/* ── Loading Skeleton ── */
+function showLoadingSkeleton() {
+  const summary = $("summary");
+  if (summary && !summary.children.length) {
+    summary.innerHTML = Array.from({ length: 4 }, () =>
+      `<div class="pill skeleton skeletonPill"></div>`
+    ).join("");
+  }
+  const fleet = $("fleetBar");
+  if (fleet && !fleet.children.length) {
+    fleet.innerHTML = `<div class="skeleton skeletonBar" style="flex:1"></div>`;
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+  showLoadingSkeleton();
   initConfirmUi();
   initFieldGuide();
   $("refreshBtn").addEventListener("click", refresh);
@@ -3048,7 +3287,12 @@ window.addEventListener("DOMContentLoaded", () => {
     showSelect.addEventListener("change", () => {
       state.ui.show = showSelect.value || "all";
       lsSet("show", state.ui.show);
-      if (state.data) renderBotsTable(state.data);
+      // Reset chip filter when using dropdown
+      state.chipFilter = "all";
+      if (state.data) {
+        renderFilterChips(state.data);
+        renderBotsTable(state.data);
+      }
     });
   }
   if (sortSelect) {

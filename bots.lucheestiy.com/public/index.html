@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bots Dashboard</title>
     <meta name="description" content="Bots dashboard: status, logs, and token/cost usage." />
-    <link rel="stylesheet" href="/styles.css?v=53" />
+    <link rel="stylesheet" href="/styles.css?v=54" />
           <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
@@ -16,7 +16,7 @@
       <div class="noscript" data-i18n="noscript">JavaScript is required for this dashboard.</div>
     </noscript>
 
-    <header class="header">
+    <header class="header headerGradient">
       <div>
         <h1 class="title" id="pageTitle">Bots Dashboard</h1>
         <div class="subtitle" id="subtitle" data-i18n="subtitle">Status • Tokens • Cost • Logs • Controls</div>
@@ -49,6 +49,16 @@
       <section id="errors" class="errors" hidden></section>
 
       <section class="summary" id="summary"></section>
+
+      <section id="fleetSection">
+        <div class="fleetBarLabel">
+          <span class="fleetTitle" data-i18n="fleet_health">Fleet Health</span>
+          <span class="fleetCounts" id="fleetCounts"></span>
+        </div>
+        <div class="fleetBar" id="fleetBar"></div>
+      </section>
+
+      <section id="filterChipsSection" class="filterChips"></section>
 
       <section class="card">
         <div class="cardHeader">
@@ -285,6 +295,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=48"></script>
+    <script src="/app.js?v=49"></script>
   </body>
 </html>

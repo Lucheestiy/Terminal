@@ -1203,3 +1203,290 @@ body.viewCompact .actions .btn{padding:4px 7px;font-size:12px}
 .fieldGuideDef code{font-family:'JetBrains Mono',monospace;font-size:11px;padding:1px 4px;background:rgba(255,255,255,.06);border-radius:3px;color:#fbbf24}
 .fieldGuideCompare{margin-top:4px;padding:6px 8px;background:rgba(94,234,212,.06);border-left:2px solid var(--teal,#5eead4);border-radius:0 6px 6px 0;font-size:11.5px;color:#9fb0c3;line-height:1.4}
 .btnSmall{font-size:11px;padding:2px 10px}
+
+/* ═══════════════════════════════════════════
+   Fleet Health Bar
+   ═══════════════════════════════════════════ */
+.fleetBar{
+  display:flex;
+  align-items:stretch;
+  gap:2px;
+  height:28px;
+  margin:10px 0 6px;
+  border-radius:8px;
+  overflow:hidden;
+  background:rgba(15,22,32,.5);
+  border:1px solid var(--border);
+}
+.fleetSeg{
+  flex:1;
+  min-width:4px;
+  cursor:pointer;
+  position:relative;
+  transition: opacity 150ms ease, transform 150ms ease, filter 150ms ease;
+}
+.fleetSeg:hover{
+  opacity:.85;
+  filter:brightness(1.3);
+  z-index:1;
+}
+.fleetSeg:active{transform:scaleY(.92)}
+.fleetSeg.good{background:var(--good)}
+.fleetSeg.warn{background:var(--warn)}
+.fleetSeg.bad{background:var(--bad)}
+.fleetSeg.inactive{background:rgba(159,176,195,.25)}
+.fleetSeg.selected{
+  outline:2px solid var(--teal);
+  outline-offset:-2px;
+  z-index:2;
+}
+.fleetBarLabel{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:0 0 6px;
+}
+.fleetBarLabel .fleetTitle{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.2px;
+}
+.fleetBarLabel .fleetCounts{
+  display:flex;
+  gap:12px;
+  font-size:12px;
+  color:var(--muted);
+}
+.fleetCount{display:inline-flex;align-items:center;gap:4px}
+.fleetCountDot{width:8px;height:8px;border-radius:999px;display:inline-block}
+
+/* Fleet tooltip */
+.fleetTooltip{
+  position:fixed;
+  z-index:10001;
+  pointer-events:none;
+  padding:8px 12px;
+  border-radius:10px;
+  background:rgba(15,22,32,.97);
+  border:1px solid rgba(35,49,66,.85);
+  color:var(--text);
+  font-size:12px;
+  line-height:1.35;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  white-space:nowrap;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+/* ═══════════════════════════════════════════
+   Quick Filter Chips
+   ═══════════════════════════════════════════ */
+.filterChips{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin:6px 0 10px;
+}
+.filterChip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 12px;
+  border-radius:999px;
+  border:1px solid rgba(35,49,66,.6);
+  background:rgba(15,22,32,.5);
+  color:var(--muted);
+  font-size:12px;
+  cursor:pointer;
+  transition: all 150ms ease;
+  user-select:none;
+}
+.filterChip:hover{
+  border-color:rgba(94,234,212,.4);
+  color:var(--text);
+  background:rgba(94,234,212,.06);
+}
+.filterChip.active{
+  border-color:rgba(94,234,212,.5);
+  background:rgba(94,234,212,.12);
+  color:var(--teal);
+  font-weight:600;
+}
+.filterChipCount{
+  font-size:10px;
+  padding:1px 6px;
+  border-radius:999px;
+  background:rgba(159,176,195,.12);
+  color:var(--muted);
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+.filterChip.active .filterChipCount{
+  background:rgba(94,234,212,.15);
+  color:var(--teal);
+}
+
+/* ═══════════════════════════════════════════
+   Loading Skeleton
+   ═══════════════════════════════════════════ */
+.skeleton{
+  position:relative;
+  overflow:hidden;
+  background:rgba(15,22,32,.5);
+  border-radius:8px;
+}
+.skeleton::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg, transparent 0%, rgba(94,234,212,.04) 40%, rgba(94,234,212,.08) 50%, rgba(94,234,212,.04) 60%, transparent 100%);
+  animation:skeletonShimmer 1.8s ease-in-out infinite;
+}
+@keyframes skeletonShimmer{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(100%)}
+}
+.skeletonPill{height:84px;border-radius:14px}
+.skeletonBar{height:28px;border-radius:8px}
+.skeletonRow{height:52px;border-radius:0;border-bottom:1px solid rgba(35,49,66,.3)}
+
+/* ═══════════════════════════════════════════
+   Mobile Card Layout
+   ═══════════════════════════════════════════ */
+@media (max-width: 680px){
+  .header{
+    flex-direction:column;
+    align-items:stretch;
+    padding:12px 14px 8px;
+  }
+  .meta{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .controls{justify-content:flex-start}
+  .main{padding:0 10px 18px}
+  .summary{grid-template-columns: repeat(2, minmax(0, 1fr));gap:8px}
+  .pill{padding:10px 10px 8px}
+  .pillValue{font-size:18px}
+
+  /* Card layout */
+  .tableWrap{overflow:visible}
+  .table,.table thead,.table tbody,.table tr,.table th,.table td{
+    display:block;
+    width:100%;
+  }
+  .table thead{display:none}
+  .sparkRow{display:none !important}
+  .table tbody tr.rowClickable{
+    border:1px solid var(--border);
+    border-radius:14px;
+    margin-bottom:8px;
+    padding:0;
+    overflow:hidden;
+    background:linear-gradient(180deg, rgba(19,28,40,.8) 0%, rgba(12,19,28,.8) 100%);
+  }
+  .table tbody tr.rowClickable td{
+    border-bottom:none;
+    padding:8px 12px;
+  }
+  .table tbody tr.rowClickable td:first-child{
+    padding:10px 12px 4px;
+  }
+  .table tbody tr.rowClickable td:last-child{
+    padding:4px 12px 10px;
+  }
+  .table tbody tr.rowClickable td[rowspan]{
+    display:block;
+    padding:6px 12px 10px;
+  }
+  .table tbody tr.rowStateActive td:first-child::before,
+  .table tbody tr.rowStateInactive td:first-child::before,
+  .table tbody tr.rowStateTransition td:first-child::before{
+    width:100%;
+    height:3px;
+    bottom:auto;
+  }
+  .actions{justify-content:flex-start}
+  .actions .btn{padding:6px 10px;font-size:12px}
+
+  .cardHeader{flex-direction:column;gap:8px;align-items:stretch}
+  .controls.tableControls{flex-wrap:wrap}
+  .input{min-width:120px;flex:1}
+
+  .fleetSeg{min-width:6px}
+
+  .modal{padding:8px}
+  .detailModalCard{width:100%;max-height:calc(100vh - 16px)}
+  .detailLayout{padding:10px}
+  .detailTopGrid{gap:10px}
+  .miniGrid{grid-template-columns:1fr}
+}
+
+@media (max-width: 420px){
+  .summary{grid-template-columns:1fr}
+  .filterChips{gap:4px}
+  .filterChip{padding:4px 8px;font-size:11px}
+  .controls .btn{font-size:12px;padding:6px 8px}
+  .fleetBar{height:22px}
+}
+
+/* ═══════════════════════════════════════════
+   Status Change Pulse Animation
+   ═══════════════════════════════════════════ */
+@keyframes statusChangePulse{
+  0%{box-shadow:0 0 0 0 rgba(94,234,212,.5)}
+  70%{box-shadow:0 0 0 8px rgba(94,234,212,0)}
+  100%{box-shadow:0 0 0 0 rgba(94,234,212,0)}
+}
+.statusChanged{animation:statusChangePulse .6s ease-out}
+
+/* ═══════════════════════════════════════════
+   Smooth Value Transitions
+   ═══════════════════════════════════════════ */
+.valueUp{color:var(--good) !important;transition:color .5s ease}
+.valueDown{color:var(--bad) !important;transition:color .5s ease}
+
+/* ═══════════════════════════════════════════
+   Enhanced Header
+   ═══════════════════════════════════════════ */
+.headerGradient{
+  background:linear-gradient(135deg, rgba(94,234,212,.04) 0%, rgba(96,165,250,.04) 50%, rgba(139,92,246,.04) 100%);
+  border-bottom:1px solid rgba(35,49,66,.4);
+}
+
+/* ═══════════════════════════════════════════
+   Search/Filter Enhancements
+   ═══════════════════════════════════════════ */
+.input:focus{
+  border-color:rgba(94,234,212,.5);
+  box-shadow:0 0 0 3px rgba(94,234,212,.08);
+}
+.select:focus{
+  border-color:rgba(94,234,212,.5);
+  box-shadow:0 0 0 3px rgba(94,234,212,.08);
+}
+
+/* ═══════════════════════════════════════════
+   Summary Trend Indicators
+   ═══════════════════════════════════════════ */
+.pillTrend{
+  display:inline-flex;
+  align-items:center;
+  gap:3px;
+  font-size:11px;
+  font-weight:600;
+  margin-left:6px;
+  vertical-align:middle;
+}
+.pillTrend.up{color:var(--good)}
+.pillTrend.down{color:var(--bad)}
+.pillTrend.flat{color:var(--muted);opacity:.5}
+
+/* ═══════════════════════════════════════════
+   Empty State
+   ═══════════════════════════════════════════ */
+.emptyState{
+  text-align:center;
+  padding:48px 20px;
+  color:var(--muted);
+}
+.emptyStateIcon{font-size:32px;margin-bottom:12px;opacity:.4}
+.emptyStateText{font-size:14px;line-height:1.5}
