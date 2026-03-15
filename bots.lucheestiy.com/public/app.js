@@ -1730,13 +1730,13 @@ function renderSparkline(daily7, { key = "tokens", color = null, fmtFn = null } 
 
 /* ── Full-width sparklines (24h hourly + 30d daily, spans entire row) ── */
 function renderFullWidthSparklines(hourly24h, daily30d) {
-  function makeBars(data, maxH, color) {
+  function makeBars(data, color) {
     if (!data || !data.length) return "";
     const vals = data.map(d => d.tokens || 0);
     const mx = Math.max(1, ...vals);
     return vals.map(v => {
-      const h = mx > 0 ? Math.max(1, Math.round((v / mx) * maxH)) : 1;
-      return `<span class="fwSparkBar" style="height:${h}px;background:${color}" title="${fmtInt(v)}"></span>`;
+      const pct = mx > 0 ? Math.max(2, Math.round((v / mx) * 100)) : 2;
+      return `<span class="fwSparkBar" style="height:${pct}%;background:${color}" title="${fmtInt(v)}"></span>`;
     }).join("");
   }
 
@@ -1744,8 +1744,8 @@ function renderFullWidthSparklines(hourly24h, daily30d) {
   const has30 = daily30d && daily30d.length;
   if (!has24 && !has30) return "";
 
-  const h24bars = has24 ? makeBars(hourly24h, 18, "var(--teal)") : "";
-  const d30bars = has30 ? makeBars(daily30d, 18, "rgba(96,165,250,.6)") : "";
+  const h24bars = has24 ? makeBars(hourly24h, "var(--teal)") : "";
+  const d30bars = has30 ? makeBars(daily30d, "rgba(96,165,250,.6)") : "";
 
   let html = `<div class="fwSparkRow">`;
   html += `<span class="fwSparkLabel">24h</span><span class="fwSparkChart">${h24bars}</span>`;

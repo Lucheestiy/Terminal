@@ -677,7 +677,8 @@ tbody tr.rowWarn:hover, tbody tr.rowBad:hover{background:rgba(94,234,212,.06)}
 .sparkRow td{border-top:none !important}
 tr:has(+ .sparkRow) td{border-bottom:none}
 .sparkTd{
-  padding:0 12px 6px !important;
+  padding:0 12px 4px !important;
+  height:1px;
 }
 .actionsTd{
   vertical-align:middle;
@@ -687,12 +688,13 @@ tr:has(+ .sparkRow) td{border-bottom:none}
   align-items:flex-end;
   gap:0;
   width:100%;
+  height:100%;
 }
 .fwSparkChart{
   display:flex;
   align-items:flex-end;
   gap:1px;
-  height:22px;
+  height:100%;
   flex:1;
   min-width:0;
 }
@@ -707,7 +709,7 @@ tr:has(+ .sparkRow) td{border-bottom:none}
   font-size:9px;
   color:var(--muted);
   flex-shrink:0;
-  line-height:22px;
+  align-self:flex-end;
   margin-right:4px;
   opacity:.6;
   letter-spacing:-.3px;
@@ -1085,9 +1087,8 @@ body.viewCompact .providerMeta{font-size:11px}
 body.viewCompact .statusDot{width:7px;height:7px;margin-right:6px}
 body.viewCompact .sparklineWrap{height:16px}
 body.viewCompact .sparklineBar{width:2px}
-body.viewCompact .sparkTd{padding:4px 6px !important}
-body.viewCompact .fwSparkChart{height:14px}
-body.viewCompact .fwSparkLabel{font-size:8px;line-height:14px}
+body.viewCompact .sparkTd{padding:2px 6px 3px !important}
+body.viewCompact .fwSparkLabel{font-size:8px}
 body.viewCompact .fwSparkGap{width:8px}
 body.viewCompact .usageCost{font-size:11px}
 body.viewCompact .usageErr{font-size:11px}
