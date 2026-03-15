@@ -350,6 +350,14 @@ const I18N = {
     cmd_navigate: "navigate",
     cmd_select: "select",
     cmd_close: "close",
+    strip_online: "{n}/{total} online",
+    strip_spent: "spent today",
+    strip_issues: "{n} issues",
+    strip_no_issues: "No issues",
+    strip_uptime: "fleet uptime",
+    activity_heatmap: "24h Activity",
+    activity_tokens: "{n} tokens",
+    activity_requests: "{n} requests",
   },
   ru: {
     app_title: "Панель ботов",
@@ -567,6 +575,14 @@ const I18N = {
     cmd_navigate: "навигация",
     cmd_select: "выбрать",
     cmd_close: "закрыть",
+    strip_online: "{n}/{total} онлайн",
+    strip_spent: "потрачено сегодня",
+    strip_issues: "{n} проблем",
+    strip_no_issues: "Без проблем",
+    strip_uptime: "аптайм флота",
+    activity_heatmap: "Активность 24ч",
+    activity_tokens: "{n} токенов",
+    activity_requests: "{n} запросов",
   },
 };
 
@@ -1050,6 +1066,129 @@ function renderInsights(data) {
         </div>
       `).join("")}
     </div>
+  `;
+}
+
+/* ── System Status Strip ── */
+function renderStatusStrip(data) {
+  const el = $("statusStrip");
+  if (!el) return;
+  const bots = Array.isArray(data.bots) ? data.bots : [];
+  if (!bots.length) { el.hidden = true; return; }
+  el.hidden = false;
+
+  const totals = data.totals || {};
+  const online = Number(totals.botsActive) || 0;
+  const total = Number(totals.botsTotal) || 0;
+  const cost = Number(totals.cost24h) || 0;
+
+  // Count issues
+  let issueCount = 0;
+  for (const bot of bots) {
+    if (botHasIssues(bot)) issueCount++;
+  }
+
+  // Fleet average uptime
+  let totalUp = 0;
+  let activeCount = 0;
+  for (const bot of bots) {
+    const up = Number(bot.systemd && bot.systemd.uptimeSeconds) || 0;
+    if ((bot.systemd && bot.systemd.activeState) === "active" && up > 0) {
+      totalUp += up;
+      activeCount++;
+    }
+  }
+  const avgUptime = activeCount > 0 ? fmtSeconds(totalUp / activeCount) : "-";
+
+  const onlineDotCls = online === total ? "good" : online > 0 ? "warn" : "bad";
+  const issueDotCls = issueCount === 0 ? "good" : "warn";
+
+  // Build mini 24h sparkline from aggregate hourly data
+  const hourlyAgg = {};
+  for (const bot of bots) {
+    const hourly = (bot.usage && bot.usage.hourly24h) ? bot.usage.hourly24h : [];
+    for (const h of hourly) {
+      if (!h.hour) continue;
+      if (!hourlyAgg[h.hour]) hourlyAgg[h.hour] = 0;
+      hourlyAgg[h.hour] += (h.requests || 0);
+    }
+  }
+  const hourlyVals = Object.entries(hourlyAgg).sort((a, b) => a[0].localeCompare(b[0])).slice(-24).map(([, v]) => v);
+  let miniSparkHtml = "";
+  if (hourlyVals.length > 2) {
+    const maxH = Math.max(1, ...hourlyVals);
+    const bars = hourlyVals.map(v => {
+      const h = Math.max(1, Math.round((v / maxH) * 14));
+      return `<span style="display:inline-block;width:2px;height:${h}px;background:rgba(94,234,212,.5);border-radius:1px;vertical-align:bottom"></span>`;
+    }).join("");
+    miniSparkHtml = `<span style="display:inline-flex;align-items:flex-end;gap:1px;height:14px;margin-left:2px;vertical-align:middle">${bars}</span>`;
+  }
+
+  el.innerHTML = `
+    <div class="stripItem"><span class="stripDot ${onlineDotCls}"></span><span class="stripValue">${online}/${total}</span> online</div>
+    <div class="stripSep"></div>
+    <div class="stripItem"><span class="stripValue">${fmtMoneyUsd(cost)}</span> ${t("strip_spent")}</div>
+    <div class="stripSep"></div>
+    <div class="stripItem"><span class="stripDot ${issueDotCls}"></span>${issueCount > 0 ? `<span class="stripValue">${issueCount}</span> issues` : t("strip_no_issues")}</div>
+    <div class="stripSep"></div>
+    <div class="stripItem">${t("strip_uptime")}: <span class="stripValue">${avgUptime}</span></div>
+    ${miniSparkHtml ? `<div class="stripSep"></div><div class="stripItem">24h${miniSparkHtml}</div>` : ""}
+  `;
+}
+
+/* ── 24h Activity Heatmap ── */
+function renderActivityHeatmap(bot) {
+  const section = $("activityHeatmapSection");
+  const wrap = $("activityHeatmap");
+  if (!section || !wrap) return;
+
+  const hourly = (bot.usage && bot.usage.hourly24h) ? bot.usage.hourly24h : [];
+  if (!hourly.length) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  // Build 24 hourly buckets
+  const buckets = new Array(24).fill(0);
+  const reqBuckets = new Array(24).fill(0);
+  for (const h of hourly) {
+    if (!h.hour) continue;
+    try {
+      const d = new Date(h.hour);
+      const hr = d.getHours();
+      if (hr >= 0 && hr < 24) {
+        buckets[hr] += (h.tokens || 0);
+        reqBuckets[hr] += (h.requests || 0);
+      }
+    } catch { /* ignore */ }
+  }
+
+  const max = Math.max(1, ...buckets);
+
+  // Quantize to levels 0-4
+  const levels = buckets.map(v => {
+    if (v === 0) return 0;
+    const ratio = v / max;
+    if (ratio < 0.15) return 1;
+    if (ratio < 0.4) return 2;
+    if (ratio < 0.7) return 3;
+    return 4;
+  });
+
+  const cells = levels.map((lvl, i) => {
+    const tokStr = fmtInt(buckets[i]);
+    const reqStr = fmtInt(reqBuckets[i]);
+    return `<div class="heatmapCell h${lvl}" title="${String(i).padStart(2, '0')}:00 — ${tokStr} tok, ${reqStr} req"></div>`;
+  }).join("");
+
+  const hours = Array.from({ length: 24 }, (_, i) =>
+    `<div class="heatmapHour">${i}</div>`
+  ).join("");
+
+  wrap.innerHTML = `
+    <div class="heatmapGrid">${cells}</div>
+    <div class="heatmapHours">${hours}</div>
   `;
 }
 
@@ -3026,8 +3165,12 @@ function renderDetails(bot) {
   ensureUnitDetails(bot.unit);
   renderUsageSummary(bot);
   renderLastError(bot);
+  renderActivityHeatmap(bot);
 
   renderUsageCharts(bot);
+
+  // Start live uptime ticker
+  startUptimeTicker(bot);
 
   const providers = bot.usage && bot.usage.byProvider ? bot.usage.byProvider : {};
   const list = $("providersList");
@@ -3628,6 +3771,68 @@ function openDetails(unit, { updateUrl = true } = {}) {
   return true;
 }
 
+/* ── Live Uptime Ticker ── */
+let _uptimeTickerTimer = null;
+let _uptimeTickerStartMs = 0;
+let _uptimeTickerBaseSeconds = 0;
+
+function startUptimeTicker(bot) {
+  stopUptimeTicker();
+  const sd = bot.systemd || {};
+  if (sd.activeState !== "active" || !Number.isFinite(sd.uptimeSeconds) || sd.uptimeSeconds <= 0) return;
+
+  _uptimeTickerBaseSeconds = sd.uptimeSeconds;
+  _uptimeTickerStartMs = Date.now();
+
+  // Find or create the uptime chip in detail meta
+  updateUptimeChip();
+  _uptimeTickerTimer = setInterval(updateUptimeChip, 1000);
+}
+
+function stopUptimeTicker() {
+  if (_uptimeTickerTimer) {
+    clearInterval(_uptimeTickerTimer);
+    _uptimeTickerTimer = null;
+  }
+}
+
+function updateUptimeChip() {
+  const metaEl = $("detailMetaLine");
+  if (!metaEl) return;
+
+  const elapsed = (Date.now() - _uptimeTickerStartMs) / 1000;
+  const totalSec = Math.floor(_uptimeTickerBaseSeconds + elapsed);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  const u = normalizeLang(state.ui.lang) === "ru" ? { d: "д", h: "ч", m: "м", s: "с" } : { d: "d", h: "h", m: "m", s: "s" };
+
+  let text;
+  if (d > 0) text = `${d}${u.d} ${h}${u.h} ${m}${u.m}`;
+  else if (h > 0) text = `${h}${u.h} ${m}${u.m}`;
+  else text = `${m}${u.m}`;
+  const secStr = `${String(s).padStart(2, "0")}${u.s}`;
+
+  // Update existing uptimeLive chip or find uptime chip
+  let liveChip = metaEl.querySelector(".uptimeLive");
+  if (!liveChip) {
+    // Find a chip that looks like uptime (contains "d " or "h " or "m ")
+    const chips = metaEl.querySelectorAll(".metaChip");
+    for (const chip of chips) {
+      const txt = chip.textContent || "";
+      if (/\d+[dhдч]\s/.test(txt) && !chip.querySelector("a") && !chip.querySelector("code")) {
+        chip.classList.add("uptimeLive");
+        liveChip = chip;
+        break;
+      }
+    }
+  }
+  if (liveChip) {
+    liveChip.innerHTML = `${text} <span class="uptimeLiveSec">${secStr}</span>`;
+  }
+}
+
 function closeDetails({ updateUrl = true } = {}) {
   if (updateUrl && getUrlUnit()) {
     // Prefer "real" back navigation, so Back/Forward works naturally and we don't
@@ -3637,8 +3842,9 @@ function closeDetails({ updateUrl = true } = {}) {
     return;
   }
 
-  // Stop log follow mode
+  // Stop log follow mode and uptime ticker
   setFollowLogs(false);
+  stopUptimeTicker();
 
   const modal = $("detailModal");
   if (modal) {
@@ -3707,6 +3913,7 @@ async function refresh() {
 
     renderHeader(data);
 
+    renderStatusStrip(data);
     renderSummary(data);
     renderFleetBar(data);
     renderInsights(data);
