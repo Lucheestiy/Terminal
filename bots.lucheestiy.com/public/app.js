@@ -1019,7 +1019,7 @@ function renderBotsTable(data) {
 
   if (!filtered.length && bots.length > 0) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="10" style="text-align:center;padding:32px 12px;color:var(--muted);font-size:13px">${escapeHtml(t("no_bots_match"))}</td>`;
+    tr.innerHTML = `<td colspan="6" style="text-align:center;padding:32px 12px;color:var(--muted);font-size:13px">${escapeHtml(t("no_bots_match"))}</td>`;
     tbody.appendChild(tr);
   }
 
@@ -1036,6 +1036,8 @@ function renderBotsTable(data) {
     const usage24 = getUsageWindow(bot, "24h") || {};
     const lastAct = bot.usage ? bot.usage.lastActivityAt : null;
     const daily7 = (bot.usage && bot.usage.daily30d) ? bot.usage.daily30d.slice(-7) : [];
+    const hourly24h = (bot.usage && bot.usage.hourly24h) ? bot.usage.hourly24h : [];
+    const daily30d = (bot.usage && bot.usage.daily30d) ? bot.usage.daily30d : [];
 
     const issues = getHealthIssues(bot);
     const primaryIssue = pickPrimaryIssue(issues);
@@ -1100,19 +1102,40 @@ function renderBotsTable(data) {
     if (isPinned(bot.unit)) tr.classList.add("rowPinned");
 
     const isChecked = state.batch.has(bot.unit);
+
+    const uptimeHtml = `${renderUptimeBar(bot.systemd.uptimeSeconds)}${restarts > 0 ? `<div class="restartsBadge" title="${t("sd_restarts")}">\u21bb ${restarts}</div>` : ""}`;
+    const activityHtml = lastAct ? `<div class="activityLine" title="${escapeHtml(lastAct)}">${escapeHtml(relativeTime(lastAct))}</div>` : "";
+
+    const usageParts = [];
+    usageParts.push(`<span class="usageToken">${fmtInt(usage24.tokens)} tok</span>`);
+    usageParts.push(`<span class="usageCost">${fmtMoneyUsd(usage24.costUSD)}</span>`);
+    if (errors24 > 0) usageParts.push(`<span class="usageErr">${fmtInt(errors24)} err</span>`);
+
+    const sparkHtml = renderFullWidthSparklines(hourly24h, daily30d);
+
+    actionsTd.setAttribute("rowspan", "2");
+    actionsTd.classList.add("actionsTd");
+
     tr.innerHTML = `
-      <td style="width:32px;padding-right:0;vertical-align:middle"><input type="checkbox" class="rowCheckbox" data-unit="${escapeHtml(bot.unit)}" ${isChecked ? "checked" : ""} /></td>
+      <td style="width:32px;padding-right:0;vertical-align:middle" rowspan="2"><input type="checkbox" class="rowCheckbox" data-unit="${escapeHtml(bot.unit)}" ${isChecked ? "checked" : ""} /></td>
       <td>${nameParts.join("")}</td>
-      <td><span class="statusDot ${dotClass}"></span>${escapeHtml(statusLabel)}${issueHtml}</td>
-      <td>${enabledBadgeHtml(bot.systemd.unitFileState)}</td>
-      <td>${renderUptimeBar(bot.systemd.uptimeSeconds)}${restarts > 0 ? `<div class="restartsBadge" title="${t("sd_restarts")}">\u21bb ${restarts}</div>` : ""}</td>
-      <td title="${escapeHtml(lastAct || "")}">${escapeHtml(relativeTime(lastAct) || "-")}</td>
-      <td class="num">${fmtInt(usage24.tokens)}${renderSparkline(daily7)}</td>
-      <td class="num">${fmtMoneyUsd(usage24.costUSD)}${renderSparkline(daily7, { key: "costUSD", color: "rgba(96,165,250,.5)", fmtFn: fmtMoneyUsd })}</td>
-      <td class="num${errors24 > 0 ? " numBad" : ""}">${fmtInt(errors24)}</td>
+      <td><span class="statusDot ${dotClass}"></span>${enabledBadgeHtml(bot.systemd.unitFileState)}${issueHtml}</td>
+      <td>${uptimeHtml}${activityHtml}</td>
+      <td class="num usageCell">${usageParts.join(" ")}</td>
     `;
     tr.appendChild(actionsTd);
     tbody.appendChild(tr);
+
+    // Sparkline sub-row (spans under all data columns, left of actions)
+    const sparkTr = document.createElement("tr");
+    sparkTr.className = "sparkRow";
+    if (tr.classList.contains("rowBad")) sparkTr.classList.add("rowBad");
+    if (tr.classList.contains("rowWarn")) sparkTr.classList.add("rowWarn");
+    if (tr.classList.contains("rowPinned")) sparkTr.classList.add("rowPinned");
+    if (tr.classList.contains("rowRecentActivity")) sparkTr.classList.add("rowRecentActivity");
+    sparkTr.innerHTML = `<td colspan="4" class="sparkTd">${sparkHtml}</td>`;
+    sparkTr.addEventListener("click", () => toggleDetails(bot.unit));
+    tbody.appendChild(sparkTr);
 
     // Checkbox handler
     const cb = tr.querySelector(".rowCheckbox[data-unit]");
@@ -1703,6 +1726,33 @@ function renderSparkline(daily7, { key = "tokens", color = null, fmtFn = null } 
     return `<span class="sparklineBar" style="height:${h}px${style ? ";" + style : ""}" title="${fmt(v)}"></span>`;
   });
   return `<span class="sparklineWrap">${bars.join("")}</span>`;
+}
+
+/* ── Full-width sparklines (24h hourly + 30d daily, spans entire row) ── */
+function renderFullWidthSparklines(hourly24h, daily30d) {
+  function makeBars(data, maxH, color) {
+    if (!data || !data.length) return "";
+    const vals = data.map(d => d.tokens || 0);
+    const mx = Math.max(1, ...vals);
+    return vals.map(v => {
+      const h = mx > 0 ? Math.max(1, Math.round((v / mx) * maxH)) : 1;
+      return `<span class="fwSparkBar" style="height:${h}px;background:${color}" title="${fmtInt(v)}"></span>`;
+    }).join("");
+  }
+
+  const has24 = hourly24h && hourly24h.length;
+  const has30 = daily30d && daily30d.length;
+  if (!has24 && !has30) return "";
+
+  const h24bars = has24 ? makeBars(hourly24h, 18, "var(--teal)") : "";
+  const d30bars = has30 ? makeBars(daily30d, 18, "rgba(96,165,250,.6)") : "";
+
+  let html = `<div class="fwSparkRow">`;
+  html += `<span class="fwSparkLabel">24h</span><span class="fwSparkChart">${h24bars}</span>`;
+  html += `<span class="fwSparkGap"></span>`;
+  html += `<span class="fwSparkLabel">30d</span><span class="fwSparkChart">${d30bars}</span>`;
+  html += `</div>`;
+  return html;
 }
 
 /* ── Pin/favorite bots ── */

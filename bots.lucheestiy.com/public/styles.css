@@ -671,6 +671,67 @@ tbody tr.rowWarn:hover, tbody tr.rowBad:hover{background:rgba(94,234,212,.06)}
   opacity:.7;
 }
 
+/* Sparkline sub-row */
+.sparkRow{cursor:pointer}
+.sparkRow:hover{background:rgba(94,234,212,.06)}
+.sparkRow td{border-top:none !important}
+tr:has(+ .sparkRow) td{border-bottom:none}
+.sparkTd{
+  padding:0 12px 6px !important;
+}
+.actionsTd{
+  vertical-align:middle;
+}
+.fwSparkRow{
+  display:flex;
+  align-items:flex-end;
+  gap:0;
+  width:100%;
+}
+.fwSparkChart{
+  display:flex;
+  align-items:flex-end;
+  gap:1px;
+  height:22px;
+  flex:1;
+  min-width:0;
+}
+.fwSparkBar{
+  flex:1;
+  min-width:0;
+  min-height:1px;
+  border-radius:1px 1px 0 0;
+  opacity:.75;
+}
+.fwSparkLabel{
+  font-size:9px;
+  color:var(--muted);
+  flex-shrink:0;
+  line-height:22px;
+  margin-right:4px;
+  opacity:.6;
+  letter-spacing:-.3px;
+}
+.fwSparkGap{
+  width:16px;
+  flex-shrink:0;
+}
+
+/* Compact usage cell */
+.usageCell{
+  white-space:nowrap;
+}
+.usageToken{color:var(--text)}
+.usageCost{color:var(--muted);margin-left:4px;font-size:12px}
+.usageErr{color:#f87171;margin-left:4px;font-size:12px;font-weight:600}
+
+/* Activity line under uptime */
+.activityLine{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:2px;
+}
+
 /* Toast notification system */
 .toastContainer{
   position:fixed;
@@ -1024,6 +1085,13 @@ body.viewCompact .providerMeta{font-size:11px}
 body.viewCompact .statusDot{width:7px;height:7px;margin-right:6px}
 body.viewCompact .sparklineWrap{height:16px}
 body.viewCompact .sparklineBar{width:2px}
+body.viewCompact .sparkTd{padding:4px 6px !important}
+body.viewCompact .fwSparkChart{height:14px}
+body.viewCompact .fwSparkLabel{font-size:8px;line-height:14px}
+body.viewCompact .fwSparkGap{width:8px}
+body.viewCompact .usageCost{font-size:11px}
+body.viewCompact .usageErr{font-size:11px}
+body.viewCompact .activityLine{font-size:10px}
 body.viewCompact .typeBadge{font-size:9px;padding:0px 5px}
 body.viewCompact .actions{gap:4px}
 body.viewCompact .actions .btn{padding:4px 7px;font-size:12px}
