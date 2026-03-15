@@ -802,6 +802,29 @@ tbody tr{transition: background var(--transition-fast)}
   outline-offset:1px;
 }
 
+/* Enabled state badge */
+.enabledBadge{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:600;
+}
+.enabledBadge.good{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.25)}
+.enabledBadge.bad{background:rgba(239,68,68,.10);color:#f87171;border:1px solid rgba(239,68,68,.25)}
+.enabledBadge.warn{background:rgba(245,158,11,.10);color:#fbbf24;border:1px solid rgba(245,158,11,.25)}
+
+/* Restart count badge */
+.restartsBadge{
+  font-size:11px;
+  color:var(--warn);
+  margin-top:2px;
+  font-weight:600;
+}
+
+/* Error count highlight */
+.numBad{color:var(--bad) !important;font-weight:650}
+
 /* Bot type badge */
 .typeBadge{
   display:inline-block;

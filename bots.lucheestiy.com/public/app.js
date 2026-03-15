@@ -1097,12 +1097,12 @@ function renderBotsTable(data) {
       <td style="width:32px;padding-right:0;vertical-align:middle"><input type="checkbox" class="rowCheckbox" data-unit="${escapeHtml(bot.unit)}" ${isChecked ? "checked" : ""} /></td>
       <td>${nameParts.join("")}</td>
       <td><span class="statusDot ${dotClass}"></span>${escapeHtml(statusLabel)}${issueHtml}</td>
-      <td>${escapeHtml(unitFileStateLabel(bot.systemd.unitFileState) || "-")}</td>
-      <td>${renderUptimeBar(bot.systemd.uptimeSeconds)}</td>
+      <td>${enabledBadgeHtml(bot.systemd.unitFileState)}</td>
+      <td>${renderUptimeBar(bot.systemd.uptimeSeconds)}${restarts > 0 ? `<div class="restartsBadge" title="${t("sd_restarts")}">\u21bb ${restarts}</div>` : ""}</td>
       <td title="${escapeHtml(lastAct || "")}">${escapeHtml(relativeTime(lastAct) || "-")}</td>
       <td class="num">${fmtInt(usage24.tokens)}${renderSparkline(daily7)}</td>
       <td class="num">${fmtMoneyUsd(usage24.costUSD)}</td>
-      <td class="num">${fmtInt(usage24.errors)}</td>
+      <td class="num${errors24 > 0 ? " numBad" : ""}">${fmtInt(errors24)}</td>
     `;
     tr.appendChild(actionsTd);
     tbody.appendChild(tr);
@@ -2002,6 +2002,14 @@ function exportCsv() {
   a.click();
   URL.revokeObjectURL(url);
   showToast(t("export_csv"), `${bots.length} bots`, { type: "good", duration: 2000 });
+}
+
+/* ── Enabled state badge ── */
+function enabledBadgeHtml(unitFileState) {
+  const label = unitFileStateLabel(unitFileState) || "-";
+  const cls = enabledChipClass(unitFileState);
+  if (!cls) return escapeHtml(label);
+  return `<span class="enabledBadge ${cls}">${escapeHtml(label)}</span>`;
 }
 
 /* ── Bot type badge ── */
