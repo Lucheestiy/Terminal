@@ -639,6 +639,7 @@ function setLanguage(lang) {
     renderFleetBar(state.data);
     renderFilterChips(state.data);
     renderBotsTable(state.data);
+    renderIssuesBadge(state.data);
     if (state.selectedUnit) {
       const still = (state.data.bots || []).find(b => b.unit === state.selectedUnit);
       if (still) renderDetails(still);
@@ -2032,6 +2033,61 @@ function updatePageTitleBadge(data) {
   document.title = issueCount > 0 ? `[${issueCount}] ${baseTitle}` : baseTitle;
 }
 
+/* ── Issues notification badge ── */
+function renderIssuesBadge(data) {
+  const el = $("issuesBadge");
+  if (!el || !data || !data.bots) return;
+
+  const bots = data.bots || [];
+  let errorCount = 0;
+  let warnCount = 0;
+  let downCount = 0;
+
+  for (const bot of bots) {
+    const issues = getHealthIssues(bot);
+    for (const issue of issues) {
+      const sev = String(issue.severity || "").toLowerCase();
+      if (sev === "error") errorCount++;
+      else if (sev === "warn") warnCount++;
+    }
+    const activeState = String(bot.systemd && bot.systemd.activeState || "");
+    if (activeState !== "active") downCount++;
+  }
+
+  const totalIssues = errorCount + warnCount + downCount;
+
+  if (totalIssues === 0) {
+    el.hidden = false;
+    el.className = "issuesBadge badgeOk";
+    const lang = normalizeLang(state.ui.lang);
+    el.innerHTML = `<span class="issuesBadgeIcon">\u2714</span>${lang === "ru" ? "Все ОК" : "All OK"}`;
+    el.onclick = null;
+    return;
+  }
+
+  el.hidden = false;
+  el.className = `issuesBadge ${errorCount > 0 || downCount > 0 ? "badgeBad" : "badgeWarn"}`;
+
+  const parts = [];
+  if (downCount > 0) parts.push(`${downCount} down`);
+  if (errorCount > 0) parts.push(`${errorCount} err`);
+  if (warnCount > 0) parts.push(`${warnCount} warn`);
+
+  el.innerHTML = `<span class="issuesBadgeIcon">${errorCount > 0 || downCount > 0 ? "\u26A0" : "\u26A0"}</span>${parts.join(" \u2022 ")}`;
+  el.onclick = () => {
+    state.chipFilter = "issues";
+    state.ui.show = "all";
+    const showSelect = $("showSelect");
+    if (showSelect) showSelect.value = "all";
+    lsSet("show", "all");
+    if (state.data) {
+      renderFilterChips(state.data);
+      renderBotsTable(state.data);
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+}
+
 /* ── Telegram link helper ── */
 function telegramLinkHtml(handle) {
   if (!handle) return "";
@@ -3262,6 +3318,7 @@ async function refresh() {
     renderFleetBar(data);
     renderFilterChips(data);
     renderBotsTable(data);
+    renderIssuesBadge(data);
     state._skipRowAnim = false;
 
     if (state.selectedUnit) {
