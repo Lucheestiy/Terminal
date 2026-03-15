@@ -222,6 +222,7 @@ const I18N = {
     summary_tokens_sub: "{requests} requests",
     summary_cost24h: "Cost (24h)",
     summary_cost_sub: "USD (from transcripts)",
+    summary_cost_monthly: "~{monthly}/mo projected",
     summary_errors24h: "Errors (24h)",
     summary_errors_sub: "stopReason=error",
     action_stop: "Stop",
@@ -319,6 +320,17 @@ const I18N = {
     status_restarting: "{name} is restarting",
     trend_up: "+{pct}%",
     trend_down: "{pct}%",
+    insights_title: "Fleet Insights",
+    insights_top_spender: "Top spender (24h)",
+    insights_daily_avg: "Daily avg cost",
+    insights_monthly_proj: "Monthly projection",
+    insights_error_rate: "Error rate (24h)",
+    insights_most_active: "Most active (24h)",
+    insights_longest_uptime: "Longest uptime",
+    insights_of_requests: "of {total} requests",
+    notif_enable: "Notifications",
+    notif_enabled: "Notifications enabled",
+    notif_denied: "Notifications blocked by browser",
   },
   ru: {
     app_title: "Панель ботов",
@@ -408,6 +420,7 @@ const I18N = {
     summary_tokens_sub: "{requests} запросов",
     summary_cost24h: "Стоимость (24ч)",
     summary_cost_sub: "USD (из транскриптов)",
+    summary_cost_monthly: "~{monthly}/мес прогноз",
     summary_errors24h: "Ошибки (24ч)",
     summary_errors_sub: "stopReason=error",
     action_stop: "Остановить",
@@ -505,6 +518,17 @@ const I18N = {
     status_restarting: "{name} перезапускается",
     trend_up: "+{pct}%",
     trend_down: "{pct}%",
+    insights_title: "Обзор флота",
+    insights_top_spender: "Макс. расходы (24ч)",
+    insights_daily_avg: "Средние расходы/день",
+    insights_monthly_proj: "Прогноз на месяц",
+    insights_error_rate: "Ошибки (24ч)",
+    insights_most_active: "Самый активный (24ч)",
+    insights_longest_uptime: "Макс. аптайм",
+    insights_of_requests: "из {total} запросов",
+    notif_enable: "Уведомления",
+    notif_enabled: "Уведомления включены",
+    notif_denied: "Уведомления заблокированы браузером",
   },
 };
 
@@ -637,6 +661,7 @@ function setLanguage(lang) {
     renderHeader(state.data);
     renderSummary(state.data);
     renderFleetBar(state.data);
+    renderInsights(state.data);
     renderFilterChips(state.data);
     renderBotsTable(state.data);
     renderIssuesBadge(state.data);
@@ -860,6 +885,136 @@ function animateNumber(el, from, to, duration, formatFn) {
   requestAnimationFrame(tick);
 }
 
+function monthlyProjectionSub(dailyAll) {
+  if (!dailyAll || dailyAll.length < 2) return t("summary_cost_sub");
+  const recent = dailyAll.slice(-7);
+  const totalCost = recent.reduce((s, d) => s + (d.costUSD || 0), 0);
+  const avgDaily = totalCost / recent.length;
+  const monthly = avgDaily * 30;
+  return t("summary_cost_monthly", { monthly: fmtMoneyUsd(monthly) });
+}
+
+function renderInsights(data) {
+  const el = $("insightsSection");
+  if (!el) return;
+  const bots = Array.isArray(data.bots) ? data.bots : [];
+  if (!bots.length) { el.hidden = true; return; }
+  el.hidden = false;
+
+  const insights = [];
+
+  // Top spender (24h)
+  let topSpender = null;
+  let topCost = 0;
+  for (const bot of bots) {
+    const u24 = (bot.usage && bot.usage.windows && bot.usage.windows["24h"]) || {};
+    const cost = Number(u24.costUSD) || 0;
+    if (cost > topCost) { topCost = cost; topSpender = bot; }
+  }
+  if (topSpender && topCost > 0) {
+    insights.push({
+      icon: "\uD83D\uDCB0",
+      label: t("insights_top_spender"),
+      value: `${topSpender.displayName || topSpender.unit}`,
+      sub: fmtMoneyUsd(topCost),
+      klass: "insightCost",
+    });
+  }
+
+  // Daily average cost (from aggregate data)
+  const dailyAgg = {};
+  for (const bot of bots) {
+    const daily = bot.usage && bot.usage.daily30d ? bot.usage.daily30d : [];
+    for (const d of daily) {
+      if (!d.date) continue;
+      if (!dailyAgg[d.date]) dailyAgg[d.date] = { costUSD: 0, tokens: 0 };
+      dailyAgg[d.date].costUSD += (d.costUSD || 0);
+      dailyAgg[d.date].tokens += (d.tokens || 0);
+    }
+  }
+  const dailyAll = Object.entries(dailyAgg).sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v);
+  if (dailyAll.length >= 3) {
+    const recent7 = dailyAll.slice(-7);
+    const avgCost = recent7.reduce((s, d) => s + d.costUSD, 0) / recent7.length;
+    const monthly = avgCost * 30;
+    insights.push({
+      icon: "\uD83D\uDCC8",
+      label: t("insights_monthly_proj"),
+      value: fmtMoneyUsd(monthly),
+      sub: `${fmtMoneyUsd(avgCost)}/day avg`,
+      klass: "insightProj",
+    });
+  }
+
+  // Error rate
+  const totals = data.totals || {};
+  const totalReq = Number(totals.requests24h) || 0;
+  const totalErr = Number(totals.errors24h) || 0;
+  if (totalReq > 0) {
+    const errPct = ((totalErr / totalReq) * 100).toFixed(1);
+    insights.push({
+      icon: totalErr > 0 ? "\u26A0\uFE0F" : "\u2705",
+      label: t("insights_error_rate"),
+      value: `${errPct}%`,
+      sub: t("insights_of_requests", { total: fmtInt(totalReq) }),
+      klass: totalErr > 0 ? "insightWarn" : "insightGood",
+    });
+  }
+
+  // Most active bot (24h tokens)
+  let mostActive = null;
+  let maxTokens = 0;
+  for (const bot of bots) {
+    const u24 = (bot.usage && bot.usage.windows && bot.usage.windows["24h"]) || {};
+    const tok = Number(u24.tokens) || 0;
+    if (tok > maxTokens) { maxTokens = tok; mostActive = bot; }
+  }
+  if (mostActive && maxTokens > 0) {
+    insights.push({
+      icon: "\u26A1",
+      label: t("insights_most_active"),
+      value: mostActive.displayName || mostActive.unit,
+      sub: `${fmtInt(maxTokens)} tokens`,
+      klass: "insightActive",
+    });
+  }
+
+  // Longest uptime
+  let longestBot = null;
+  let longestUp = 0;
+  for (const bot of bots) {
+    const up = Number(bot.systemd && bot.systemd.uptimeSeconds) || 0;
+    if (up > longestUp) { longestUp = up; longestBot = bot; }
+  }
+  if (longestBot && longestUp > 3600) {
+    insights.push({
+      icon: "\u23F1\uFE0F",
+      label: t("insights_longest_uptime"),
+      value: longestBot.displayName || longestBot.unit,
+      sub: fmtSeconds(longestUp),
+      klass: "insightUptime",
+    });
+  }
+
+  el.innerHTML = `
+    <div class="insightsHeader">
+      <span class="insightsTitle">${escapeHtml(t("insights_title"))}</span>
+    </div>
+    <div class="insightsGrid">
+      ${insights.map(i => `
+        <div class="insightCard ${i.klass || ""}">
+          <span class="insightIcon">${i.icon}</span>
+          <div class="insightBody">
+            <div class="insightLabel">${escapeHtml(i.label)}</div>
+            <div class="insightValue">${escapeHtml(i.value)}</div>
+            <div class="insightSub">${escapeHtml(i.sub || "")}</div>
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderSummary(data) {
   const s = data.totals || {};
   const div = $("summary");
@@ -895,7 +1050,7 @@ function renderSummary(data) {
   const cards = [
     { label: t("summary_bots"), value: fmtInt(s.botsTotal), sub: t("summary_bots_sub", { active: fmtInt(s.botsActive) }), spark: "", trend: "", klass: "", key: "bots" },
     { label: t("summary_tokens24h"), value: fmtInt(s.tokens24h), sub: t("summary_tokens_sub", { requests: fmtInt(s.requests24h) }), spark: renderPillSparkline(dailyAll, "tokens", "rgba(94,234,212,.5)"), trend: trendHtml(tokenTrend), klass: "", key: "tokens" },
-    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: t("summary_cost_sub"), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)"), trend: trendHtml(costTrend), klass: "", key: "cost" },
+    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: monthlyProjectionSub(dailyAll), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)"), trend: trendHtml(costTrend), klass: "", key: "cost" },
     { label: t("summary_errors24h"), value: fmtInt(s.errors24h), sub: t("summary_errors_sub"), spark: renderPillSparkline(dailyAll, "errors", "rgba(251,113,133,.5)"), trend: trendHtml(errorTrend), klass: hasErrors ? "pillError" : "", key: "errors" },
   ];
 
@@ -1486,6 +1641,18 @@ function drawBars(canvas, values, color, { labels = null, title = "", format = n
   // Subtle chart background
   ctx.fillStyle = "rgba(159,176,195,0.08)";
   ctx.fillRect(pad, pad, innerW, innerH);
+
+  // Horizontal gridlines
+  const gridCount = 4;
+  ctx.strokeStyle = "rgba(159,176,195,0.08)";
+  ctx.lineWidth = 1;
+  for (let g = 1; g < gridCount; g++) {
+    const gy = pad + (innerH / gridCount) * g;
+    ctx.beginPath();
+    ctx.moveTo(pad, Math.round(gy) + 0.5);
+    ctx.lineTo(pad + innerW, Math.round(gy) + 0.5);
+    ctx.stroke();
+  }
 
   if (allZero) {
     ctx.fillStyle = "rgba(159,176,195,0.3)";
@@ -2520,6 +2687,40 @@ function renderFilterChips(data) {
   }
 }
 
+/* ── Browser Notifications ── */
+function canNotify() {
+  return typeof Notification !== "undefined" && Notification.permission === "granted";
+}
+
+async function requestNotifications() {
+  if (typeof Notification === "undefined") return false;
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") {
+    showToast(t("notif_denied"), "", { type: "warn", duration: 3000 });
+    return false;
+  }
+  const result = await Notification.requestPermission();
+  if (result === "granted") {
+    showToast(t("notif_enabled"), "", { type: "good", duration: 2000 });
+    return true;
+  }
+  return false;
+}
+
+function sendBrowserNotification(title, body, { tag = "bots-dashboard" } = {}) {
+  if (!canNotify()) return;
+  try {
+    const n = new Notification(title, {
+      body,
+      tag,
+      icon: "/favicon-192x192.png",
+      silent: false,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 10000);
+  } catch { /* ignore */ }
+}
+
 /* ── Status Change Detection ── */
 function detectStatusChanges(oldData, newData) {
   if (!oldData || !oldData.bots || !newData || !newData.bots) return;
@@ -2540,9 +2741,11 @@ function detectStatusChanges(oldData, newData) {
         showToast(t("status_restarting", { name }), "", { type: "warn", duration: 5000 });
       } else {
         showToast(t("status_went_down", { name }), `${systemdActiveLabel(newActive)}`, { type: "bad", duration: 6000 });
+        sendBrowserNotification(t("status_went_down", { name }), systemdActiveLabel(newActive), { tag: `down-${bot.unit}` });
       }
     } else if (oldActive !== "active" && newActive === "active") {
       showToast(t("status_came_up", { name }), "", { type: "good", duration: 4000 });
+      sendBrowserNotification(t("status_came_up", { name }), "", { tag: `up-${bot.unit}` });
     }
   }
 }
@@ -2583,6 +2786,8 @@ function showShortcuts() {
       { keys: ["R"], desc: t("sc_refresh") },
       { keys: ["/"], desc: t("sc_filter") },
       { keys: ["A"], desc: t("sc_select_all") },
+      { keys: ["L"], desc: "Load logs (in details)" },
+      { keys: ["N"], desc: t("notif_enable") },
       { keys: ["?"], desc: t("sc_shortcuts") },
     ];
     grid.innerHTML = shortcuts.map(s => `
@@ -2930,16 +3135,31 @@ function renderLogsView() {
   }
 
   const qRe = q ? new RegExp(escapeRegExp(q), "gi") : null;
-  const badRe = /\b(error|fatal|exception|traceback)\b/ig;
-  const warnRe = /\b(warn|warning)\b/ig;
+  const badRe = /\b(error|fatal|exception|traceback|panic|critical)\b/ig;
+  const warnRe = /\b(warn|warning|deprecated)\b/ig;
+  const jsonRe = /(\{[^{}]{10,}\})/g;
+  const timestampRe = /^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)\s*/;
 
   const out = shown.map((ln, i) => {
     let s = escapeHtml(ln);
     if (qRe) s = s.replace(qRe, m => `<mark class="logMatch">${m}</mark>`);
     s = s.replace(badRe, m => `<span class="logSevBad">${m}</span>`);
     s = s.replace(warnRe, m => `<span class="logSevWarn">${m}</span>`);
+
+    // Highlight JSON objects inline
+    s = s.replace(jsonRe, m => `<span class="logJson">${m}</span>`);
+
+    // Detect severity for line indicator
+    const lnLower = ln.toLowerCase();
+    let sevCls = "";
+    if (/\b(error|fatal|exception|traceback|panic|critical)\b/.test(lnLower)) sevCls = "logLineBad";
+    else if (/\b(warn|warning|deprecated)\b/.test(lnLower)) sevCls = "logLineWarn";
+
+    // Highlight timestamps
+    s = s.replace(/^(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)/, m => `<span class="logTs">${m}</span>`);
+
     const lineNum = q ? "" : `<span class="logLineNum">${i + 1}</span>`;
-    return `<span class="logLine">${lineNum}<span class="logLineText">${s}</span></span>`;
+    return `<span class="logLine ${sevCls}">${lineNum}<span class="logLineText">${s}</span></span>`;
   }).join("\n");
 
   if (!out) {
@@ -3450,6 +3670,7 @@ async function refresh() {
 
     renderSummary(data);
     renderFleetBar(data);
+    renderInsights(data);
     renderFilterChips(data);
     renderBotsTable(data);
     renderIssuesBadge(data);
@@ -3652,6 +3873,23 @@ window.addEventListener("DOMContentLoaded", () => {
   const exportBtn = $("exportCsvBtn");
   if (exportBtn) exportBtn.addEventListener("click", exportCsv);
 
+  /* ── Notifications ── */
+  const notifBtn = $("notifBtn");
+  if (notifBtn) {
+    // Update visual state
+    const updateNotifBtn = () => {
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        notifBtn.classList.add("active");
+        notifBtn.title = t("notif_enabled");
+      }
+    };
+    updateNotifBtn();
+    notifBtn.addEventListener("click", async () => {
+      await requestNotifications();
+      updateNotifBtn();
+    });
+  }
+
   /* ── Global keyboard shortcuts ── */
   document.addEventListener("keydown", (e) => {
     // Skip if inside input/select/textarea
@@ -3706,6 +3944,18 @@ window.addEventListener("DOMContentLoaded", () => {
         }
         return;
       }
+    }
+
+    if ((e.key === "l" || e.key === "L") && isDetailOpen) {
+      e.preventDefault();
+      if (state.details.logsUnit) loadLogs(state.details.logsUnit);
+      return;
+    }
+
+    if (e.key === "n" || e.key === "N") {
+      e.preventDefault();
+      requestNotifications();
+      return;
     }
   });
 

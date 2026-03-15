@@ -1897,3 +1897,123 @@ tbody tr.rowClickable:hover .statusDot.warn{
   opacity:1;
   transform:translateX(-50%) scale(1);
 }
+
+/* ═══════════════════════════════════════════
+   Fleet Insights Section
+   ═══════════════════════════════════════════ */
+#insightsSection{margin:8px 0 10px}
+.insightsHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:8px;
+}
+.insightsTitle{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.2px;
+}
+.insightsGrid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap:8px;
+}
+.insightCard{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(19,28,40,.7) 0%, rgba(12,19,28,.7) 100%);
+  transition:border-color var(--transition-fast), transform 150ms ease;
+}
+.insightCard:hover{
+  border-color:rgba(94,234,212,.2);
+  transform:translateY(-1px);
+}
+.insightIcon{
+  font-size:18px;
+  line-height:1;
+  flex-shrink:0;
+  margin-top:2px;
+}
+.insightBody{min-width:0}
+.insightLabel{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.2;
+}
+.insightValue{
+  font-size:14px;
+  font-weight:650;
+  margin-top:2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.insightSub{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:1px;
+}
+.insightCost{border-color:rgba(96,165,250,.2)}
+.insightCost .insightValue{color:#93c5fd}
+.insightProj{border-color:rgba(34,197,94,.2)}
+.insightProj .insightValue{color:#86efac}
+.insightWarn{border-color:rgba(245,158,11,.25)}
+.insightWarn .insightValue{color:#fbbf24}
+.insightGood{border-color:rgba(34,197,94,.2)}
+.insightGood .insightValue{color:#4ade80}
+.insightActive{border-color:rgba(94,234,212,.2)}
+.insightActive .insightValue{color:#5eead4}
+.insightUptime{border-color:rgba(139,92,246,.2)}
+.insightUptime .insightValue{color:#c4b5fd}
+
+@media (max-width: 680px){
+  .insightsGrid{grid-template-columns: repeat(2, minmax(0, 1fr))}
+}
+@media (max-width: 420px){
+  .insightsGrid{grid-template-columns:1fr}
+}
+
+/* ═══════════════════════════════════════════
+   Enhanced Log Viewer
+   ═══════════════════════════════════════════ */
+.logLine.logLineBad{
+  border-left:3px solid var(--bad);
+  padding-left:6px;
+  margin-left:-9px;
+  background:rgba(239,68,68,.04);
+}
+.logLine.logLineWarn{
+  border-left:3px solid var(--warn);
+  padding-left:6px;
+  margin-left:-9px;
+  background:rgba(245,158,11,.03);
+}
+.logTs{
+  color:rgba(94,234,212,.5);
+}
+.logJson{
+  color:rgba(251,191,36,.7);
+  font-size:11px;
+}
+
+/* ═══════════════════════════════════════════
+   Notification Button
+   ═══════════════════════════════════════════ */
+.btnNotif{
+  font-size:15px;
+  padding:6px 8px;
+  line-height:1;
+  background:rgba(159,176,195,.08);
+  border-color:rgba(159,176,195,.25);
+}
+.btnNotif:hover{border-color:rgba(94,234,212,.4)}
+.btnNotif.active{
+  border-color:rgba(94,234,212,.5);
+  color:var(--teal);
+  background:rgba(94,234,212,.08);
+}
