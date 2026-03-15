@@ -299,6 +299,9 @@ const I18N = {
     conn_online: "Connected",
     conn_offline: "Disconnected",
     legend_errors_day: "Errors/day",
+    no_bots_match: "No bots match your filters.",
+    log_matches: "{n} matches",
+    data_from: "Data from {time}",
   },
   ru: {
     app_title: "Панель ботов",
@@ -467,6 +470,9 @@ const I18N = {
     conn_online: "Подключено",
     conn_offline: "Отключено",
     legend_errors_day: "Ошибки/день",
+    no_bots_match: "Нет ботов по вашему фильтру.",
+    log_matches: "{n} совпадений",
+    data_from: "Данные от {time}",
   },
 };
 
@@ -1004,6 +1010,12 @@ function renderBotsTable(data) {
     countEl.textContent = `${filtered.length}/${bots.length}`;
   }
 
+  if (!filtered.length && bots.length > 0) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="10" style="text-align:center;padding:32px 12px;color:var(--muted);font-size:13px">${escapeHtml(t("no_bots_match"))}</td>`;
+    tbody.appendChild(tr);
+  }
+
   for (const { bot } of filtered) {
     const tr = document.createElement("tr");
     tr.classList.add("rowClickable");
@@ -1251,6 +1263,16 @@ function drawBars(canvas, values, color, { labels = null, title = "", format = n
     const y = pad + (innerH - bh);
     ctx.fillRect(x + 1, y, Math.max(1, barW - 2), bh);
   }
+
+  // Draw max value label
+  const dpr = window.devicePixelRatio || 1;
+  const fmtFn = typeof format === "function" ? format : (v) => String(v);
+  const maxLabel = fmtFn(max);
+  ctx.fillStyle = "rgba(159,176,195,0.45)";
+  ctx.font = `${Math.round(10 * dpr)}px ui-sans-serif, system-ui, sans-serif`;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "top";
+  ctx.fillText(maxLabel, w - pad, pad + 2);
 
   canvas._barChart = {
     pad,
@@ -1564,13 +1586,23 @@ function renderHealth(bot) {
 
   if (actionsEl) actionsEl.innerHTML = "";
 
-  const issues = getHealthIssues(bot);
-  if (!issues.length) {
+  const issuesRaw = getHealthIssues(bot);
+  if (!issuesRaw.length) {
     el.textContent = t("health_ok");
     el.classList.add("muted");
     return;
   }
   el.classList.remove("muted");
+
+  // Sort: errors first, then warnings, then by timestamp descending
+  const sevRank = (s) => { const v = String(s || "").toLowerCase(); return v === "error" ? 0 : v === "warn" ? 1 : 2; };
+  const issues = [...issuesRaw].sort((a, b) => {
+    const d = sevRank(a.severity) - sevRank(b.severity);
+    if (d !== 0) return d;
+    const ta = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const tb = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return tb - ta;
+  });
 
   const parts = [];
   for (const it of issues) {
@@ -2085,6 +2117,11 @@ function renderDetailsMeta(bot) {
   const lastAct = bot.usage ? bot.usage.lastActivityAt : null;
   if (lastAct) push(relativeTime(lastAct));
 
+  // Data freshness
+  if (state.data && state.data.generatedAt) {
+    push(t("data_from", { time: relativeTime(state.data.generatedAt) || fmtIso(state.data.generatedAt) }));
+  }
+
   metaEl.innerHTML = chips.map((c) => {
     const cls = ["metaChip", c.klass].filter(Boolean).join(" ");
     let inner;
@@ -2235,7 +2272,9 @@ function renderDetails(bot) {
     }
   }
 
-  // Render provider donut chart
+  // Render provider donut chart (hide if no data)
+  const donutWrap = $("providerDonut") && $("providerDonut").closest(".providerChartWrap");
+  if (donutWrap) donutWrap.style.display = entries.length ? "" : "none";
   renderProviderDonut(bot);
 
   state.details.logsUnit = bot.unit;
@@ -2305,6 +2344,22 @@ function renderLogsView() {
   const qLower = q.toLowerCase();
   const lines = raw.split(/\r?\n/);
   const shown = q ? lines.filter(ln => String(ln || "").toLowerCase().includes(qLower)) : lines;
+
+  // Show match count badge
+  const searchInput = $("logSearchInput");
+  const badge = $("logMatchBadge");
+  if (badge) {
+    if (q && shown.length > 0) {
+      badge.textContent = t("log_matches", { n: shown.length });
+      badge.hidden = false;
+    } else if (q && !shown.length) {
+      badge.textContent = t("logs_no_matches");
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+  }
+
   if (q && !shown.length) {
     logsPre.textContent = t("logs_no_matches");
     return;

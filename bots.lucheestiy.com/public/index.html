@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bots Dashboard</title>
     <meta name="description" content="Bots dashboard: status, logs, and token/cost usage." />
-    <link rel="stylesheet" href="/styles.css?v=41" />
+    <link rel="stylesheet" href="/styles.css?v=42" />
           <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
@@ -243,6 +243,7 @@
                   data-i18n-placeholder="log_search_placeholder"
                   data-i18n-aria-label="log_search_aria"
                 />
+                <span id="logMatchBadge" class="logMatchBadge" hidden></span>
               </div>
               <pre id="logsPre" class="logs" data-i18n="logs_hint">Click "Load logs".</pre>
             </div>
@@ -276,6 +277,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=35"></script>
+    <script src="/app.js?v=36"></script>
   </body>
 </html>
