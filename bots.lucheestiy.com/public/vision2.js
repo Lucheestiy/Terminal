@@ -308,6 +308,9 @@ const I18N = {
     fleet_offline: "Offline",
     download_logs: "Download",
     no_logs_download: "No logs to download",
+    fg_title: "Field Guide",
+    fg_expand: "Expand",
+    fg_collapse: "Collapse",
   },
   ru: {
     app_title: "Командный Центр Ботов",
@@ -481,6 +484,9 @@ const I18N = {
     fleet_offline: "Офлайн",
     download_logs: "Скачать",
     no_logs_download: "Нет логов для скачивания",
+    fg_title: "Справочник полей",
+    fg_expand: "Развернуть",
+    fg_collapse: "Свернуть",
   },
 };
 
@@ -1342,6 +1348,7 @@ function renderDetails(bot, { unitChanged } = { unitChanged: false }) {
   renderDetailsMeta(bot);
   renderQuickActions(bot);
   renderBotDocs(bot);
+  renderFieldGuide(bot);
   renderHealth(bot);
   renderSystemdBox(bot);
   renderUsageSummary(bot);
@@ -2129,6 +2136,374 @@ function downloadLogs() {
 }
 
 // ============================================
+// Field Guide (contextual term explainer)
+// ============================================
+function initFieldGuide() {
+  const toggle = $("fieldGuideToggle");
+  const box = $("fieldGuideBox");
+  if (!toggle || !box) return;
+  toggle.addEventListener("click", () => {
+    const show = box.hidden;
+    box.hidden = !show;
+    toggle.textContent = show ? t("fg_collapse") : t("fg_expand");
+  });
+}
+
+function renderFieldGuide(bot) {
+  const box = $("fieldGuideBox");
+  const titleEl = $("fieldGuideTitle");
+  if (!box) return;
+  if (titleEl) titleEl.textContent = t("fg_title");
+
+  const lang = normalizeLang(state.ui.lang) || "en";
+  const isRu = lang === "ru";
+  const sd = bot.systemd || {};
+  const usage = bot.usage || {};
+  const allTime = usage.allTime || {};
+  const w24 = (usage.windows && usage.windows["24h"]) || {};
+  const providers = usage.byProvider || {};
+  const providerNames = Object.keys(providers);
+
+  // Count fleet stats for comparisons
+  const bots = state.data && Array.isArray(state.data.bots) ? state.data.bots : [];
+  const clawdbots = bots.filter(b => b.type === "clawdbot");
+  const droids = bots.filter(b => b.type === "droid");
+  const totalBots = bots.length;
+  const totalCost = bots.reduce((s, b) => s + ((b.usage && b.usage.allTime && b.usage.allTime.costUSD) || 0), 0);
+  const thisCostPct = totalCost > 0 ? ((allTime.costUSD || 0) / totalCost * 100).toFixed(1) : "0";
+  const costRank = bots
+    .map(b => ({ unit: b.unit, cost: (b.usage && b.usage.allTime && b.usage.allTime.costUSD) || 0 }))
+    .sort((a, b) => b.cost - a.cost)
+    .findIndex(b => b.unit === bot.unit) + 1;
+
+  const groups = [];
+
+  // ── Identity ──
+  const identityEntries = [];
+
+  identityEntries.push({
+    term: bot.displayName || bot.unit,
+    def: isRu
+      ? `<strong>Отображаемое имя</strong> этого бота в дашборде. Задаётся в <code>config.json</code> → <code>botMappings</code>. Реальный идентификатор бота — его systemd unit.`
+      : `<strong>Display name</strong> for this bot in the dashboard. Set in <code>config.json</code> → <code>botMappings</code>. The real identifier is the systemd unit name.`,
+  });
+
+  if (bot.telegramHandle) {
+    identityEntries.push({
+      term: bot.telegramHandle,
+      def: isRu
+        ? `<strong>Telegram-хэндл</strong> — имя бота в Telegram. Пользователи пишут этому боту в Telegram, и он обрабатывает их запросы. Каждый бот имеет уникальный хэндл, зарегистрированный через <code>@BotFather</code>.`
+        : `<strong>Telegram handle</strong> — the bot's username in Telegram. Users message this bot, and it processes their requests. Each bot has a unique handle registered via <code>@BotFather</code>.`,
+    });
+  }
+
+  if (bot.type) {
+    const typeExplain = bot.type === "clawdbot"
+      ? (isRu
+        ? `<strong>Тип: clawdbot</strong> — этот бот работает на движке <strong>Clawdbot Gateway</strong>. Clawdbot — это универсальная платформа, которая принимает сообщения из Telegram, направляет их в настроенный AI-бэкенд (Claude, Codex, Gemini, Kimi, MiniMax), управляет очередью задач, хранит историю сессий и отправляет результаты обратно в чат. ${clawdbots.length} из ${totalBots} ботов используют этот движок.`
+        : `<strong>Type: clawdbot</strong> — this bot runs on the <strong>Clawdbot Gateway</strong> engine. Clawdbot is a universal platform that receives messages from Telegram, routes them to the configured AI backend (Claude, Codex, Gemini, Kimi, MiniMax), manages a job queue, stores session history, and streams results back to chat. ${clawdbots.length} of ${totalBots} bots use this engine.`)
+      : bot.type === "droid"
+        ? (isRu
+          ? `<strong>Тип: droid</strong> — этот бот работает через <strong>Droid CLI</strong> (<code>droid exec</code>). В отличие от clawdbot, Droid — это более простой Python-бот, который вызывает Droid CLI для каждого сообщения. Нет очереди задач clawdbot, но есть свой набор команд (/repo, /newchat). ${droids.length} из ${totalBots} ботов используют Droid.`
+          : `<strong>Type: droid</strong> — this bot runs via the <strong>Droid CLI</strong> (<code>droid exec</code>). Unlike clawdbot, Droid is a simpler Python bot that calls Droid CLI for each message. No clawdbot job queue, but has its own commands (/repo, /newchat). ${droids.length} of ${totalBots} bots use Droid.`)
+        : (isRu
+          ? `<strong>Тип: ${escapeHtml(bot.type)}</strong> — тип движка этого бота.`
+          : `<strong>Type: ${escapeHtml(bot.type)}</strong> — the engine type for this bot.`);
+    identityEntries.push({ term: bot.type, def: typeExplain });
+  }
+
+  if (bot.gatewayPort) {
+    const otherPorts = clawdbots.filter(b => b.unit !== bot.unit && b.gatewayPort).map(b => b.gatewayPort).join(", ");
+    identityEntries.push({
+      term: `port:${bot.gatewayPort}`,
+      def: isRu
+        ? `<strong>Gateway-порт</strong> — HTTP-порт на localhost, на котором Clawdbot Gateway слушает входящие запросы. Telegram-часть бота подключается к этому порту для передачи сообщений. Каждый clawdbot-бот имеет уникальный порт, чтобы они не конфликтовали.`
+        : `<strong>Gateway port</strong> — the HTTP port on localhost where the Clawdbot Gateway listens for requests. The bot's Telegram connector sends messages to this port. Each clawdbot bot needs a unique port to avoid conflicts.`,
+      compare: isRu
+        ? `Другие порты в системе: ${otherPorts || "нет"}`
+        : `Other ports in the fleet: ${otherPorts || "none"}`,
+    });
+  }
+
+  identityEntries.push({
+    term: `unit:${bot.unit}`,
+    def: isRu
+      ? `<strong>Systemd unit</strong> — имя сервиса в systemd. Это уникальный идентификатор бота в операционной системе. Имя обычно отражает тип бота и его назначение: <code>cli-bridge-gateway-*</code> = CLI-Bridge бот (запускает CLI-задачи), <code>clawdbot-*-telegram</code> = чат-бот через Clawdbot, <code>droid*</code> = Droid-бот. Используется для команд <code>systemctl start/stop/restart ${escapeHtml(bot.unit)}</code>.`
+      : `<strong>Systemd unit</strong> — the service name in systemd. This is the bot's unique identifier in the OS. The name typically reflects the bot type: <code>cli-bridge-gateway-*</code> = CLI-Bridge bot (runs CLI jobs), <code>clawdbot-*-telegram</code> = chat bot via Clawdbot, <code>droid*</code> = Droid bot. Used for <code>systemctl start/stop/restart ${escapeHtml(bot.unit)}</code>.`,
+  });
+
+  if (bot.scope) {
+    identityEntries.push({
+      term: `scope:${bot.scope}`,
+      def: bot.scope === "system"
+        ? (isRu
+          ? `<strong>Scope: system</strong> — этот бот работает как системный сервис (от root). Управляется через <code>sudo systemctl ...</code>. Большинство ботов (${bots.filter(b=>b.scope==="system").length}/${totalBots}) работают в этом режиме.`
+          : `<strong>Scope: system</strong> — runs as a system-level service (as root). Managed via <code>sudo systemctl ...</code>. Most bots (${bots.filter(b=>b.scope==="system").length}/${totalBots}) run this way.`)
+        : (isRu
+          ? `<strong>Scope: user</strong> — этот бот работает как пользовательский сервис (от ${escapeHtml(bot.user || "user")}). Управляется через <code>systemctl --user ...</code>. Это позволяет запускать бот без root-прав, изолируя его от системных процессов.`
+          : `<strong>Scope: user</strong> — runs as a user-level service (as ${escapeHtml(bot.user || "user")}). Managed via <code>systemctl --user ...</code>. This allows running the bot without root, isolating it from system processes.`),
+    });
+  }
+
+  groups.push({
+    title: isRu ? "Идентификация" : "Identity",
+    entries: identityEntries,
+  });
+
+  // ── System Status ──
+  const systemEntries = [];
+
+  systemEntries.push({
+    term: `Status: ${sd.activeState || "-"} (${sd.subState || "-"})`,
+    def: isRu
+      ? `<strong>activeState</strong> показывает, запущен ли бот: <code>active</code> = работает, <code>inactive</code> = остановлен, <code>failed</code> = упал с ошибкой, <code>activating</code> = запускается (может быть зациклен в auto-restart). <strong>subState</strong> уточняет: <code>running</code> = процесс жив и работает, <code>dead</code> = процесс завершён.`
+      : `<strong>activeState</strong> shows whether the bot is running: <code>active</code> = running, <code>inactive</code> = stopped, <code>failed</code> = crashed, <code>activating</code> = starting (may be stuck in auto-restart loop). <strong>subState</strong> refines: <code>running</code> = process alive, <code>dead</code> = process exited.`,
+  });
+
+  if (sd.uptimeSeconds != null) {
+    const uptimeH = Math.floor(sd.uptimeSeconds / 3600);
+    systemEntries.push({
+      term: `Uptime: ${fmtSeconds(sd.uptimeSeconds)}`,
+      def: isRu
+        ? `Время с момента последнего успешного запуска. ${uptimeH > 24 ? "Бот стабильно работает больше суток — это хороший знак." : uptimeH > 1 ? "Бот работает несколько часов." : "Бот запущен недавно — возможно, был перезапущен вручную или из-за ошибки."}`
+        : `Time since last successful start. ${uptimeH > 24 ? "Running for over a day — a sign of stability." : uptimeH > 1 ? "Running for several hours." : "Started recently — may have been restarted manually or due to an error."}`,
+    });
+  }
+
+  systemEntries.push({
+    term: `Restarts: ${fmtInt(sd.nRestarts)}`,
+    def: isRu
+      ? `Количество раз, когда systemd автоматически перезапускал этот бот после сбоя. Высокое число означает нестабильность: бот падает и systemd поднимает его снова (если <code>Restart=always</code> настроен в юнит-файле). 0 перезапусков = бот работает стабильно с момента последнего ручного запуска.`
+      : `Number of times systemd auto-restarted this bot after a crash. High count means instability: the bot crashes and systemd brings it back (if <code>Restart=always</code> is configured). 0 restarts = stable since last manual start.`,
+  });
+
+  systemEntries.push({
+    term: `Memory: ${fmtBytes(sd.memoryCurrentBytes)}`,
+    def: isRu
+      ? `Текущее потребление оперативной памяти процессом бота. Clawdbot-боты обычно используют 200–500 МБ (Node.js + CLI-процессы). Droid-боты обычно легче (~100–200 МБ, Python). Если памяти больше 1 ГБ — возможна утечка.`
+      : `Current RAM usage of the bot process. Clawdbot bots typically use 200–500 MB (Node.js + CLI subprocesses). Droid bots are usually lighter (~100–200 MB, Python). If over 1 GB — possible memory leak.`,
+  });
+
+  systemEntries.push({
+    term: `PID: ${sd.mainPid || "-"}`,
+    def: isRu
+      ? `<strong>Process ID</strong> — уникальный номер процесса в Linux. Меняется при каждом перезапуске. Используется для отладки: <code>kill ${sd.mainPid}</code> завершит процесс, <code>strace -p ${sd.mainPid}</code> покажет системные вызовы.`
+      : `<strong>Process ID</strong> — unique process number in Linux. Changes on each restart. Useful for debugging: <code>kill ${sd.mainPid}</code> terminates it, <code>strace -p ${sd.mainPid}</code> shows system calls.`,
+  });
+
+  groups.push({
+    title: isRu ? "Состояние системы" : "System Status",
+    entries: systemEntries,
+  });
+
+  // ── Unit Details / Environment ──
+  const unitPayload = state.details.unitDetails.payload;
+  if (unitPayload) {
+    const envEntries = [];
+    const uf = unitPayload.unitFile || {};
+
+    if (unitPayload.fragmentPath) {
+      envEntries.push({
+        term: unitPayload.fragmentPath,
+        def: isRu
+          ? `<strong>Fragment path</strong> — путь к файлу юнита systemd на диске. Это конфигурационный файл, который описывает, как запускать бот: какую команду выполнить, с какими переменными окружения, в какой директории, от какого пользователя, и что делать при сбое. Редактируется через <code>sudo nano ${escapeHtml(unitPayload.fragmentPath)}</code>, затем <code>sudo systemctl daemon-reload</code>.`
+          : `<strong>Fragment path</strong> — path to the systemd unit file on disk. This config file describes how to run the bot: which command to execute, environment variables, working directory, user, and restart policy. Edit with <code>sudo nano ${escapeHtml(unitPayload.fragmentPath)}</code>, then <code>sudo systemctl daemon-reload</code>.`,
+      });
+    }
+
+    if (uf.workingDirectory) {
+      envEntries.push({
+        term: `WorkingDirectory: ${uf.workingDirectory}`,
+        def: isRu
+          ? `Рабочая директория, в которой запускается процесс бота. Это корень проекта — все относительные пути в конфиге разрешаются от неё.`
+          : `Working directory where the bot process starts. This is the project root — all relative paths in config resolve from here.`,
+      });
+    }
+
+    if (uf.execStart) {
+      envEntries.push({
+        term: `ExecStart: ${uf.execStart}`,
+        def: isRu
+          ? `<strong>Команда запуска</strong> — что systemd выполняет для старта бота. <code>/usr/bin/clawdbot gateway</code> запускает Clawdbot в режиме gateway (слушает HTTP + подключается к Telegram). Для Droid-ботов это обычно <code>python3 bot.py</code>.`
+          : `<strong>Start command</strong> — what systemd executes to launch the bot. <code>/usr/bin/clawdbot gateway</code> starts Clawdbot in gateway mode (listens on HTTP + connects to Telegram). For Droid bots, this is typically <code>python3 bot.py</code>.`,
+      });
+    }
+
+    const shownEnv = uf.env && uf.env.shown ? uf.env.shown : {};
+    for (const [key, val] of Object.entries(shownEnv)) {
+      let explanation;
+      if (key === "CLAWDBOT_CONFIG_PATH") {
+        explanation = isRu
+          ? `<strong>Путь к конфигу Clawdbot</strong> — JSON-файл, который определяет поведение бота: какой AI-бэкенд использовать (Claude/Codex/Gemini/Kimi/MiniMax), список разрешённых workspace, токены Telegram, таймауты задач, параллельность и режимы (bypass-sandbox, bypass-permissions). Каждый бот имеет свой конфиг, поэтому один может использовать Codex, а другой — Claude.`
+          : `<strong>Clawdbot config path</strong> — a JSON file defining the bot's behavior: which AI backend to use (Claude/Codex/Gemini/Kimi/MiniMax), allowed workspaces, Telegram tokens, job timeouts, concurrency, and modes (bypass-sandbox, bypass-permissions). Each bot has its own config, so one can use Codex while another uses Claude.`;
+      } else if (key === "CLAWDBOT_GATEWAY_PORT") {
+        explanation = isRu
+          ? `<strong>Порт gateway</strong> — HTTP-порт, на котором Clawdbot слушает. Telegram-коннектор и cli-bridge плагин подключаются сюда. Совпадает с <code>port</code> в шапке карточки.`
+          : `<strong>Gateway port</strong> — HTTP port where Clawdbot listens. The Telegram connector and cli-bridge plugin connect here. Matches <code>port</code> shown in the card header.`;
+      } else if (key === "CLAWDBOT_STATE_DIR") {
+        explanation = isRu
+          ? `<strong>Директория состояния</strong> — папка, где Clawdbot хранит все данные: историю сессий (SQLite), логи использования токенов, очередь задач и временные файлы. Именно отсюда дашборд берёт статистику (токены, стоимость, ошибки). Путь <code>${escapeHtml(val)}</code> уникален для каждого бота.`
+          : `<strong>State directory</strong> — folder where Clawdbot stores all data: session history (SQLite), token usage logs, job queue, and temp files. This is where the dashboard reads statistics from (tokens, cost, errors). Path <code>${escapeHtml(val)}</code> is unique per bot.`;
+      } else if (key.startsWith("CLAWDBOT_")) {
+        explanation = isRu
+          ? `Переменная окружения Clawdbot: <code>${escapeHtml(key)}=${escapeHtml(val)}</code>`
+          : `Clawdbot environment variable: <code>${escapeHtml(key)}=${escapeHtml(val)}</code>`;
+      } else {
+        explanation = isRu
+          ? `Переменная окружения: <code>${escapeHtml(key)}=${escapeHtml(val)}</code>`
+          : `Environment variable: <code>${escapeHtml(key)}=${escapeHtml(val)}</code>`;
+      }
+      envEntries.push({
+        term: `${key}=${val}`,
+        def: explanation,
+      });
+    }
+
+    const hiddenKeys = uf.env && uf.env.hiddenKeys ? uf.env.hiddenKeys : [];
+    if (hiddenKeys.length) {
+      envEntries.push({
+        term: isRu ? `Скрытые ключи: ${hiddenKeys.join(", ")}` : `Hidden keys: ${hiddenKeys.join(", ")}`,
+        def: isRu
+          ? `Эти переменные окружения скрыты из дашборда в целях безопасности. Обычно содержат стандартные системные пути (<code>PATH</code>), настройки терминала (<code>TERM</code>, <code>FORCE_COLOR</code>) и не несут конфигурационной ценности.`
+          : `These environment variables are hidden from the dashboard for security. They typically contain standard system paths (<code>PATH</code>), terminal settings (<code>TERM</code>, <code>FORCE_COLOR</code>), and carry no configuration value.`,
+      });
+    }
+
+    if (envEntries.length) {
+      groups.push({
+        title: isRu ? "Юнит и окружение" : "Unit & Environment",
+        entries: envEntries,
+      });
+    }
+  }
+
+  // ── Usage & Cost ──
+  const usageEntries = [];
+
+  usageEntries.push({
+    term: isRu ? `Токены (24ч): ${fmtInt(w24.tokens)}` : `Tokens (24h): ${fmtInt(w24.tokens)}`,
+    def: isRu
+      ? `Количество <strong>токенов</strong>, использованных за последние 24 часа. Токен — это единица текста (~4 символа на английском или ~1-2 символа на русском). AI-модели тарифицируются за токены: входные (ваш запрос) + выходные (ответ модели). Чем длиннее запрос и ответ, тем больше токенов.`
+      : `Number of <strong>tokens</strong> used in the last 24 hours. A token is a unit of text (~4 English characters or ~1-2 Russian characters). AI models charge per token: input (your request) + output (model's response). Longer conversations = more tokens.`,
+  });
+
+  usageEntries.push({
+    term: isRu ? `Стоимость (24ч): ${fmtMoneyUsd(w24.costUSD)}` : `Cost (24h): ${fmtMoneyUsd(w24.costUSD)}`,
+    def: isRu
+      ? `Стоимость всех API-вызовов за 24 часа в долларах. Рассчитывается на основе прайсов каждой модели (цена за 1M токенов). Claude Opus стоит дороже, Codex/MiniMax — дешевле.`
+      : `Cost of all API calls in the last 24 hours in USD. Calculated from each model's pricing (cost per 1M tokens). Claude Opus costs more, Codex/MiniMax are cheaper.`,
+    compare: isRu
+      ? `Этот бот — #${costRank} по общей стоимости из ${totalBots}. Доля: ${thisCostPct}% от общей ($${totalCost.toFixed(2)}).`
+      : `This bot is #${costRank} by total cost out of ${totalBots}. Share: ${thisCostPct}% of total ($${totalCost.toFixed(2)}).`,
+  });
+
+  if (allTime.tokens) {
+    usageEntries.push({
+      term: isRu ? `Всего токенов: ${fmtInt(allTime.tokens)}` : `All-time tokens: ${fmtInt(allTime.tokens)}`,
+      def: isRu
+        ? `Общее количество токенов, использованных этим ботом за всё время его работы. ${fmtInt(allTime.requests)} запросов, ${fmtInt(allTime.errors)} ошибок.`
+        : `Total tokens used by this bot since it was first deployed. ${fmtInt(allTime.requests)} requests, ${fmtInt(allTime.errors)} errors.`,
+    });
+  }
+
+  if (usage.sessionsFiles != null) {
+    usageEntries.push({
+      term: isRu ? `Сессии: ${fmtInt(usage.sessionsFiles)} (${fmtBytes(usage.sessionsBytes)})` : `Sessions: ${fmtInt(usage.sessionsFiles)} (${fmtBytes(usage.sessionsBytes)})`,
+      def: isRu
+        ? `Количество файлов сессий в state-директории бота. Каждая сессия — это отдельный диалог или CLI-задача. Размер показывает, сколько дискового пространства занимает история.`
+        : `Number of session files in the bot's state directory. Each session is a separate conversation or CLI job. Size shows how much disk space the history occupies.`,
+    });
+  }
+
+  groups.push({
+    title: isRu ? "Использование и стоимость" : "Usage & Cost",
+    entries: usageEntries,
+  });
+
+  // ── Providers ──
+  if (providerNames.length) {
+    const providerEntries = [];
+    for (const name of providerNames) {
+      const prov = providers[name];
+      const models = prov.models ? Object.keys(prov.models) : [];
+      let provExplain;
+      if (name === "anthropic") {
+        provExplain = isRu
+          ? `<strong>Anthropic</strong> — провайдер модели Claude. Модели: ${models.join(", ") || "Claude"}. Самый дорогой провайдер (Opus ~$15/$75 за 1M input/output токенов), но самый мощный для сложных задач.`
+          : `<strong>Anthropic</strong> — provider for Claude models. Models: ${models.join(", ") || "Claude"}. Most expensive provider (Opus ~$15/$75 per 1M input/output tokens), but most capable for complex tasks.`;
+      } else if (name.includes("codex") || name.includes("openai")) {
+        provExplain = isRu
+          ? `<strong>${escapeHtml(name)}</strong> — провайдер Codex/GPT моделей (OpenAI). Модели: ${models.join(", ") || "Codex"}. Быстрый и эффективный для задач с кодом, дешевле Claude.`
+          : `<strong>${escapeHtml(name)}</strong> — provider for Codex/GPT models (OpenAI). Models: ${models.join(", ") || "Codex"}. Fast and efficient for code tasks, cheaper than Claude.`;
+      } else if (name.includes("minimax")) {
+        provExplain = isRu
+          ? `<strong>${escapeHtml(name)}</strong> — провайдер MiniMax. Модели: ${models.join(", ") || "MiniMax"}. Альтернативный AI-провайдер, обычно самый дешёвый.`
+          : `<strong>${escapeHtml(name)}</strong> — MiniMax provider. Models: ${models.join(", ") || "MiniMax"}. Alternative AI provider, typically the cheapest.`;
+      } else if (name.includes("kimi")) {
+        provExplain = isRu
+          ? `<strong>${escapeHtml(name)}</strong> — провайдер Kimi (Moonshot AI). Модели: ${models.join(", ") || "Kimi"}. Специализируется на задачах с кодом.`
+          : `<strong>${escapeHtml(name)}</strong> — Kimi provider (Moonshot AI). Models: ${models.join(", ") || "Kimi"}. Specializes in coding tasks.`;
+      } else if (name.includes("gemini") || name.includes("google")) {
+        provExplain = isRu
+          ? `<strong>${escapeHtml(name)}</strong> — провайдер Gemini (Google). Модели: ${models.join(", ") || "Gemini"}. Мощная модель с большим контекстным окном.`
+          : `<strong>${escapeHtml(name)}</strong> — Gemini provider (Google). Models: ${models.join(", ") || "Gemini"}. Powerful model with large context window.`;
+      } else {
+        provExplain = isRu
+          ? `<strong>${escapeHtml(name)}</strong> — AI-провайдер. Модели: ${models.join(", ") || "-"}.`
+          : `<strong>${escapeHtml(name)}</strong> — AI provider. Models: ${models.join(", ") || "-"}.`;
+      }
+      providerEntries.push({
+        term: `${name}: ${fmtInt(prov.tokens)} tokens, ${fmtMoneyUsd(prov.costUSD)}`,
+        def: provExplain,
+      });
+    }
+    groups.push({
+      title: isRu ? "Провайдеры AI" : "AI Providers",
+      entries: providerEntries,
+    });
+  }
+
+  // ── Health ──
+  const healthEntries = [];
+  const issues = getHealthIssues(bot);
+  if (issues.length) {
+    for (const issue of issues) {
+      healthEntries.push({
+        term: issue.message || issue.key || "Issue",
+        def: isRu
+          ? `<strong>Severity: ${escapeHtml(issue.severity || "unknown")}</strong>. ${issue.hint ? escapeHtml(issue.hint) : "Проблема обнаружена в логах бота."} ${issue.key && issue.key.includes("oauth") ? "OAuth-проблемы обычно решаются кнопкой «Sync Claude auth» + Restart." : ""}`
+          : `<strong>Severity: ${escapeHtml(issue.severity || "unknown")}</strong>. ${issue.hint ? escapeHtml(issue.hint) : "Issue detected from bot logs."} ${issue.key && issue.key.includes("oauth") ? "OAuth issues are typically fixed via \"Sync Claude auth\" + Restart." : ""}`,
+      });
+    }
+  } else {
+    healthEntries.push({
+      term: isRu ? "Все системы работают" : "All systems operational",
+      def: isRu
+        ? "Никаких проблем не обнаружено. Дашборд проверяет: OAuth-ошибки, конфликты портов, отсутствие бинарников, ошибки подключения к Telegram, и другие паттерны в логах."
+        : "No issues detected. The dashboard checks for: OAuth errors, port conflicts, missing binaries, Telegram connection errors, and other patterns in recent logs.",
+    });
+  }
+  groups.push({
+    title: isRu ? "Здоровье" : "Health",
+    entries: healthEntries,
+  });
+
+  // Render
+  box.innerHTML = groups.map(g => `
+    <div class="field-guide-group">
+      <div class="field-guide-group-title">${escapeHtml(g.title)}</div>
+      ${g.entries.map(e => `
+        <div class="field-guide-entry">
+          <div class="field-guide-term">${escapeHtml(e.term)}</div>
+          <div class="field-guide-def">${e.def}</div>
+          ${e.compare ? `<div class="field-guide-compare">${e.compare}</div>` : ""}
+        </div>
+      `).join("")}
+    </div>
+  `).join("");
+}
+
+// ============================================
 // Error Chart in Details
 // ============================================
 function renderUsageChartsExtended(bot) {
@@ -2269,6 +2644,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   initConfirmUi();
   initNotifications();
+  initFieldGuide();
 
   window.addEventListener("popstate", () => {
     try { syncDetailsFromUrl(); } catch { /* ignore */ }

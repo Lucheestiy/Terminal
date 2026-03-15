@@ -2064,6 +2064,86 @@ html.ios .orb {
 /* Charts grid responsive already handled above */
 
 /* ============================================
+   Field Guide
+   ============================================ */
+.field-guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+}
+
+.field-guide-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.field-guide-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-purple);
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.field-guide-entry {
+  margin-bottom: var(--space-3);
+}
+
+.field-guide-entry:last-child {
+  margin-bottom: 0;
+}
+
+.field-guide-term {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-cyan);
+  margin-bottom: 2px;
+}
+
+.field-guide-def {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.field-guide-def strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.field-guide-def code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 1px 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  color: var(--accent-amber);
+}
+
+.field-guide-compare {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: rgba(167, 139, 250, 0.08);
+  border-left: 2px solid var(--accent-purple);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.btn-small {
+  font-size: 11px;
+  padding: 3px 10px;
+}
+
+/* ============================================
    Download Logs Button
    ============================================ */
 #downloadLogsBtn {
