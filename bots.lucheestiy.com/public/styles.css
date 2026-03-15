@@ -106,6 +106,8 @@ body.modalOpen{overflow:hidden}
 .pillLabel{color:var(--muted);font-size:12px}
 .pillValue{font-size:20px;font-weight:650;margin-top:6px}
 .pillSub{color:var(--muted);font-size:12px;margin-top:2px}
+.pill.pillError{border-color:rgba(239,68,68,.35)}
+.pill.pillError .pillValue{color:var(--bad)}
 
 .card{
   background:linear-gradient(180deg, rgba(19,28,40,.9) 0%, rgba(12,19,28,.9) 100%);
@@ -401,6 +403,13 @@ tbody tr.rowStateTransition td:first-child::before{background:rgba(245,158,11,.8
   background:var(--surface);
 }
 .providerName{font-weight:650}
+.providerPct{
+  font-weight:400;
+  font-size:11px;
+  color:var(--muted);
+  margin-left:4px;
+  opacity:.7;
+}
 .providerMeta{color:var(--muted);font-size:12px;margin-top:2px}
 .providerNums{text-align:right;font-variant-numeric:tabular-nums}
 

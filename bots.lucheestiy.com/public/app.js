@@ -815,16 +815,17 @@ function renderSummary(data) {
   }
   const dailyAll = Object.entries(dailyAgg).sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v);
 
+  const hasErrors = (Number(s.errors24h) || 0) > 0;
   const cards = [
-    { label: t("summary_bots"), value: fmtInt(s.botsTotal), sub: t("summary_bots_sub", { active: fmtInt(s.botsActive) }), spark: "" },
-    { label: t("summary_tokens24h"), value: fmtInt(s.tokens24h), sub: t("summary_tokens_sub", { requests: fmtInt(s.requests24h) }), spark: renderPillSparkline(dailyAll, "tokens", "rgba(94,234,212,.5)") },
-    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: t("summary_cost_sub"), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)") },
-    { label: t("summary_errors24h"), value: fmtInt(s.errors24h), sub: t("summary_errors_sub"), spark: renderPillSparkline(dailyAll, "errors", "rgba(251,113,133,.5)") },
+    { label: t("summary_bots"), value: fmtInt(s.botsTotal), sub: t("summary_bots_sub", { active: fmtInt(s.botsActive) }), spark: "", klass: "" },
+    { label: t("summary_tokens24h"), value: fmtInt(s.tokens24h), sub: t("summary_tokens_sub", { requests: fmtInt(s.requests24h) }), spark: renderPillSparkline(dailyAll, "tokens", "rgba(94,234,212,.5)"), klass: "" },
+    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: t("summary_cost_sub"), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)"), klass: "" },
+    { label: t("summary_errors24h"), value: fmtInt(s.errors24h), sub: t("summary_errors_sub"), spark: renderPillSparkline(dailyAll, "errors", "rgba(251,113,133,.5)"), klass: hasErrors ? "pillError" : "" },
   ];
 
   for (const c of cards) {
     const el = document.createElement("div");
-    el.className = "pill";
+    el.className = `pill ${c.klass || ""}`.trim();
     el.innerHTML = `
       <div class="pillLabel">${c.label}</div>
       <div class="pillValue">${c.value}</div>
@@ -1101,7 +1102,7 @@ function renderBotsTable(data) {
       <td>${renderUptimeBar(bot.systemd.uptimeSeconds)}${restarts > 0 ? `<div class="restartsBadge" title="${t("sd_restarts")}">\u21bb ${restarts}</div>` : ""}</td>
       <td title="${escapeHtml(lastAct || "")}">${escapeHtml(relativeTime(lastAct) || "-")}</td>
       <td class="num">${fmtInt(usage24.tokens)}${renderSparkline(daily7)}</td>
-      <td class="num">${fmtMoneyUsd(usage24.costUSD)}</td>
+      <td class="num">${fmtMoneyUsd(usage24.costUSD)}${renderSparkline(daily7, { key: "costUSD", color: "rgba(96,165,250,.5)", fmtFn: fmtMoneyUsd })}</td>
       <td class="num${errors24 > 0 ? " numBad" : ""}">${fmtInt(errors24)}</td>
     `;
     tr.appendChild(actionsTd);
@@ -1685,13 +1686,15 @@ function showToast(title, msg, { type = "info", duration = 4000 } = {}) {
 }
 
 /* ── Sparkline renderer ── */
-function renderSparkline(daily7) {
+function renderSparkline(daily7, { key = "tokens", color = null, fmtFn = null } = {}) {
   if (!daily7 || !daily7.length) return "";
-  const vals = daily7.map(d => d.tokens || 0);
+  const vals = daily7.map(d => d[key] || 0);
   const max = Math.max(1, ...vals);
+  const fmt = fmtFn || fmtInt;
+  const style = color ? `background:${color}` : "";
   const bars = vals.map(v => {
     const h = Math.max(1, Math.round((v / max) * 18));
-    return `<span class="sparklineBar" style="height:${h}px" title="${fmtInt(v)}"></span>`;
+    return `<span class="sparklineBar" style="height:${h}px${style ? ";" + style : ""}" title="${fmt(v)}"></span>`;
   });
   return `<span class="sparklineWrap">${bars.join("")}</span>`;
 }
@@ -2253,6 +2256,7 @@ function renderDetails(bot) {
   list.innerHTML = "";
 
   const entries = Object.entries(providers).sort((a, b) => (b[1].tokens || 0) - (a[1].tokens || 0));
+  const totalProviderTokens = entries.reduce((sum, [, st]) => sum + (st.tokens || 0), 0);
   if (!entries.length) {
     list.innerHTML = `<div class="muted">${escapeHtml(t("no_usage"))}</div>`;
   } else {
@@ -2266,9 +2270,11 @@ function renderDetails(bot) {
           modelParts.push(`${m} (${fmtInt(ms.tokens)} ${t("tokens_word")})`);
         }
       }
+      const pct = totalProviderTokens > 0 ? ((st.tokens || 0) / totalProviderTokens * 100) : 0;
+      const pctStr = pct >= 1 ? `${pct.toFixed(0)}%` : pct > 0 ? "<1%" : "0%";
       row.innerHTML = `
         <div>
-          <div class="providerName">${escapeHtml(provider)}</div>
+          <div class="providerName">${escapeHtml(provider)} <span class="providerPct">${pctStr}</span></div>
           <div class="providerMeta">${escapeHtml(modelParts.join(" • ") || "")}</div>
         </div>
         <div class="providerNums">
