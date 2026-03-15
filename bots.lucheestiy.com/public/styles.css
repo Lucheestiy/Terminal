@@ -124,12 +124,16 @@ body.modalOpen{overflow:hidden}
   content:"";
   position:absolute;
   top:0;left:0;right:0;
-  height:1px;
-  background:linear-gradient(90deg, transparent, rgba(94,234,212,.15), transparent);
-  opacity:0;
+  height:2px;
+  background:linear-gradient(90deg, transparent 5%, rgba(94,234,212,.3) 50%, transparent 95%);
+  opacity:.35;
   transition:opacity var(--transition-med);
 }
 .pill:hover::before{opacity:1}
+.pill--bots::before{background:linear-gradient(90deg, transparent 5%, rgba(94,234,212,.45) 50%, transparent 95%)}
+.pill--tokens::before{background:linear-gradient(90deg, transparent 5%, rgba(96,165,250,.45) 50%, transparent 95%)}
+.pill--cost::before{background:linear-gradient(90deg, transparent 5%, rgba(34,197,94,.45) 50%, transparent 95%)}
+.pill--errors::before{background:linear-gradient(90deg, transparent 5%, rgba(251,113,133,.45) 50%, transparent 95%)}
 .pillLabel{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pillValue{font-size:20px;font-weight:650;margin-top:6px;white-space:nowrap}
 .pillSub{color:var(--muted);font-size:12px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1747,4 +1751,149 @@ tbody tr.rowStateTransition td:first-child::before{background:linear-gradient(18
 ::selection{
   background:rgba(94,234,212,.25);
   color:var(--text);
+}
+
+/* ═══════════════════════════════════════════
+   Pill Stagger Entrance Animation
+   ═══════════════════════════════════════════ */
+@keyframes pillEntrance{
+  from{opacity:0;transform:translateY(10px) scale(.97)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.pill.pillAnimIn{animation:pillEntrance 500ms cubic-bezier(.21,1.02,.73,1) backwards}
+.pill.pillAnimIn:nth-child(2){animation-delay:60ms}
+.pill.pillAnimIn:nth-child(3){animation-delay:120ms}
+.pill.pillAnimIn:nth-child(4){animation-delay:180ms}
+
+/* ═══════════════════════════════════════════
+   Hover Preview Card
+   ═══════════════════════════════════════════ */
+.hoverPreview{
+  position:fixed;
+  z-index:10000;
+  pointer-events:none;
+  min-width:260px;
+  max-width:340px;
+  padding:14px 16px;
+  background:rgba(12,19,28,.98);
+  border:1px solid rgba(94,234,212,.15);
+  border-radius:14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 1px rgba(94,234,212,.15);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  color:var(--text);
+  font-size:13px;
+  animation:hoverPreviewIn 180ms ease forwards;
+}
+.hoverPreview[hidden]{display:none !important}
+@keyframes hoverPreviewIn{
+  from{opacity:0;transform:translateY(4px) scale(.98)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.hpHeader{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:4px;
+}
+.hpHeader strong{font-size:14px}
+.hpStatus{color:var(--muted);font-size:12px;margin-bottom:10px}
+.hpGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px 16px;
+  margin-bottom:10px;
+}
+.hpStat{display:flex;flex-direction:column;gap:2px}
+.hpLabel{color:var(--muted);font-size:11px}
+.hpVal{font-weight:650;font-variant-numeric:tabular-nums;font-size:13px}
+.hpVal.bad{color:var(--bad)}
+.hpVal.warn{color:var(--warn)}
+.hpVal.good{color:var(--good)}
+.hpIssues{
+  margin-bottom:10px;
+  font-size:12px;
+}
+.hpIssue{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:3px 0;
+  color:var(--muted);
+}
+.hpIssue.bad{color:#f87171}
+.hpIssue.warn{color:#fbbf24}
+.hpIssueDot{
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  flex-shrink:0;
+}
+.hpIssueDot.bad{background:var(--bad)}
+.hpIssueDot.warn{background:var(--warn)}
+.hpHint{
+  color:var(--muted);
+  font-size:11px;
+  text-align:center;
+  padding-top:8px;
+  border-top:1px solid rgba(35,49,66,.4);
+  opacity:.6;
+}
+
+/* ═══════════════════════════════════════════
+   Pill Glow Effects per Type
+   ═══════════════════════════════════════════ */
+.pill--bots{border-color:rgba(94,234,212,.18)}
+.pill--bots:hover{border-color:rgba(94,234,212,.35)}
+.pill--tokens{border-color:rgba(96,165,250,.18)}
+.pill--tokens:hover{border-color:rgba(96,165,250,.35)}
+.pill--cost{border-color:rgba(34,197,94,.18)}
+.pill--cost:hover{border-color:rgba(34,197,94,.35)}
+.pill--errors:not(.pillError){border-color:rgba(251,113,133,.12)}
+.pill--errors:not(.pillError):hover{border-color:rgba(251,113,133,.25)}
+
+/* ═══════════════════════════════════════════
+   Enhanced Pill Value Colors
+   ═══════════════════════════════════════════ */
+.pill--bots .pillValue{color:#5eead4}
+.pill--tokens .pillValue{color:#93c5fd}
+.pill--cost .pillValue{color:#86efac}
+
+/* ═══════════════════════════════════════════
+   Better Row Active Glow
+   ═══════════════════════════════════════════ */
+tbody tr.rowClickable:hover .statusDot.good{
+  box-shadow:0 0 12px rgba(34,197,94,.6);
+}
+tbody tr.rowClickable:hover .statusDot.bad{
+  box-shadow:0 0 14px rgba(239,68,68,.7);
+}
+tbody tr.rowClickable:hover .statusDot.warn{
+  box-shadow:0 0 12px rgba(245,158,11,.6);
+}
+
+/* ═══════════════════════════════════════════
+   Fleet Bar Segment Tooltip Enhancement
+   ═══════════════════════════════════════════ */
+.fleetSeg::after{
+  content:attr(data-name);
+  position:absolute;
+  bottom:calc(100% + 6px);
+  left:50%;
+  transform:translateX(-50%) scale(.9);
+  padding:3px 8px;
+  border-radius:6px;
+  background:rgba(12,19,28,.95);
+  border:1px solid rgba(35,49,66,.7);
+  color:var(--text);
+  font-size:11px;
+  white-space:nowrap;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 150ms ease, transform 150ms ease;
+  z-index:10;
+}
+.fleetSeg:hover::after{
+  opacity:1;
+  transform:translateX(-50%) scale(1);
 }

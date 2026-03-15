@@ -906,7 +906,8 @@ function renderSummary(data) {
     const c = cards[i];
     const rv = rawValues[i];
     const el = document.createElement("div");
-    el.className = `pill ${c.klass || ""}`.trim();
+    el.className = `pill pill--${c.key} ${c.klass || ""}`.trim();
+    if (!state._summaryRendered) el.classList.add("pillAnimIn");
     el.innerHTML = `
       <div class="pillLabel">${c.label}</div>
       <div class="pillValue"><span class="pillNum">${c.value}</span>${c.trend || ""}</div>
@@ -928,6 +929,7 @@ function renderSummary(data) {
   for (let i = 0; i < cards.length; i++) {
     state._summaryRaw[cards[i].key] = rawValues[i].raw;
   }
+  state._summaryRendered = true;
 }
 
 function makeActionBtn(label, klass, onClick) {
@@ -1056,6 +1058,76 @@ async function syncClaudeAuthAndRestart(unit) {
     showToast(t("sync_claude_auth"), errMsg, { type: "bad", duration: 6000 });
     setError(t("sync_claude_auth_failed", { error: errMsg }));
   }
+}
+
+/* ── Hover Preview Card ── */
+let _hoverTimer = null;
+let _hoverUnit = null;
+
+function showHoverPreview(bot, x, y) {
+  const el = $("hoverPreview");
+  if (!el) return;
+  _hoverUnit = bot.unit;
+
+  const sd = bot.systemd || {};
+  const usage24 = getUsageWindow(bot, "24h") || {};
+  const activeState = String(sd.activeState || "");
+  const subState = String(sd.subState || "");
+  const dotCls = statusDotClass(bot);
+  const statusText = `${systemdActiveLabel(activeState)}${subState ? " (" + systemdSubLabel(subState) + ")" : ""}`;
+  const issues = getHealthIssues(bot);
+  const errors24 = Number(usage24.errors) || 0;
+
+  let issuesHtml = "";
+  if (issues.length > 0) {
+    const items = issues.slice(0, 3).map(iss => {
+      const sev = String(iss.severity || "").toLowerCase();
+      const msg = escapeHtml(String(iss.message || iss.key || ""));
+      return `<div class="hpIssue ${sev}"><span class="hpIssueDot ${sev}"></span>${msg}</div>`;
+    }).join("");
+    issuesHtml = `<div class="hpIssues">${items}</div>`;
+  }
+
+  const memStr = Number.isFinite(sd.memoryBytes) ? fmtBytes(sd.memoryBytes) : "-";
+  const cpuStr = Number.isFinite(sd.cpuSeconds) ? fmtSeconds(sd.cpuSeconds) : "-";
+
+  el.innerHTML = `
+    <div class="hpHeader">
+      <span class="statusDot ${dotCls}"></span>
+      <strong>${escapeHtml(bot.displayName || bot.unit)}</strong>
+      ${typeBadgeHtml(bot.type)}
+    </div>
+    <div class="hpStatus">${escapeHtml(statusText)}</div>
+    ${issuesHtml}
+    <div class="hpGrid">
+      <div class="hpStat"><span class="hpLabel">${t("sd_memory")}</span><span class="hpVal">${memStr}</span></div>
+      <div class="hpStat"><span class="hpLabel">${t("sd_cpu")}</span><span class="hpVal">${cpuStr}</span></div>
+      <div class="hpStat"><span class="hpLabel">${t("sd_restarts")}</span><span class="hpVal${(Number(sd.nRestarts) || 0) > 0 ? " warn" : ""}">${fmtInt(sd.nRestarts || 0)}</span></div>
+      <div class="hpStat"><span class="hpLabel">${t("summary_errors24h")}</span><span class="hpVal${errors24 > 0 ? " bad" : ""}">${fmtInt(errors24)}</span></div>
+    </div>
+    <div class="hpHint">${t("action_details")} \u2192</div>
+  `;
+
+  el.hidden = false;
+
+  // Position near cursor
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let left = x + 16;
+  let top = y - 20;
+  const rect = el.getBoundingClientRect();
+  if (left + rect.width > vw - 16) left = x - rect.width - 16;
+  if (top + rect.height > vh - 16) top = vh - rect.height - 16;
+  if (top < 16) top = 16;
+  el.style.left = `${left}px`;
+  el.style.top = `${top}px`;
+}
+
+function hideHoverPreview() {
+  clearTimeout(_hoverTimer);
+  _hoverUnit = null;
+  const el = $("hoverPreview");
+  if (el) el.hidden = true;
 }
 
 function renderBotsTable(data) {
@@ -1271,8 +1343,32 @@ function renderBotsTable(data) {
       const target = e.target;
       if (target && target.closest && target.closest("button")) return;
       if (target && (target.classList.contains("rowCheckbox") || target.closest(".rowCheckbox"))) return;
+      hideHoverPreview();
       toggleDetails(bot.unit);
     });
+
+    // Hover preview (desktop only)
+    tr.addEventListener("mouseenter", (e) => {
+      if (window.innerWidth < 680) return;
+      clearTimeout(_hoverTimer);
+      _hoverTimer = setTimeout(() => showHoverPreview(bot, e.clientX, e.clientY), 500);
+    });
+    tr.addEventListener("mousemove", (e) => {
+      if (_hoverUnit !== bot.unit) return;
+      const el = $("hoverPreview");
+      if (!el || el.hidden) return;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      let left = e.clientX + 16;
+      let top = e.clientY - 20;
+      const rect = el.getBoundingClientRect();
+      if (left + rect.width > vw - 16) left = e.clientX - rect.width - 16;
+      if (top + rect.height > vh - 16) top = vh - rect.height - 16;
+      if (top < 16) top = 16;
+      el.style.left = `${left}px`;
+      el.style.top = `${top}px`;
+    });
+    tr.addEventListener("mouseleave", hideHoverPreview);
   }
 
   updateBatchBar();
@@ -1363,6 +1459,13 @@ function resizeCanvasToDisplaySize(canvas) {
   if (canvas.height !== nextH) canvas.height = nextH;
 }
 
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
 function drawBars(canvas, values, color, { labels = null, title = "", format = null } = {}) {
   if (!canvas) return;
   resizeCanvasToDisplaySize(canvas);
@@ -1380,7 +1483,8 @@ function drawBars(canvas, values, color, { labels = null, title = "", format = n
   const n = vals.length;
   const allZero = vals.every(v => !v);
 
-  ctx.fillStyle = "rgba(159,176,195,0.18)";
+  // Subtle chart background
+  ctx.fillStyle = "rgba(159,176,195,0.08)";
   ctx.fillRect(pad, pad, innerW, innerH);
 
   if (allZero) {
@@ -1396,14 +1500,42 @@ function drawBars(canvas, values, color, { labels = null, title = "", format = n
 
   const max = Math.max(1, ...vals);
   const barW = innerW / n;
-  ctx.fillStyle = color;
+
+  // Draw gradient-filled bars with rounded tops
+  const barGrad = ctx.createLinearGradient(0, pad, 0, pad + innerH);
+  barGrad.addColorStop(0, color);
+  barGrad.addColorStop(1, hexToRgba(color, 0.25));
+
   for (let i = 0; i < n; i++) {
     const v = vals[i] || 0;
     const bh = (v / max) * innerH;
-    const x = pad + i * barW;
+    if (bh < 1) continue;
+    const x = pad + i * barW + 1;
     const y = pad + (innerH - bh);
-    ctx.fillRect(x + 1, y, Math.max(1, barW - 2), bh);
+    const bw = Math.max(1, barW - 2);
+    const radius = Math.min(3, bw / 3, bh / 2);
+
+    ctx.fillStyle = barGrad;
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + bw - radius, y);
+    ctx.quadraticCurveTo(x + bw, y, x + bw, y + radius);
+    ctx.lineTo(x + bw, y + bh);
+    ctx.lineTo(x, y + bh);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fill();
   }
+
+  // Glow line at the chart area top edge
+  const glowGrad = ctx.createLinearGradient(pad, pad, pad + innerW, pad);
+  glowGrad.addColorStop(0, "transparent");
+  glowGrad.addColorStop(0.3, hexToRgba(color, 0.12));
+  glowGrad.addColorStop(0.7, hexToRgba(color, 0.12));
+  glowGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(pad, pad, innerW, 1);
 
   // Draw max value label
   const dpr = window.devicePixelRatio || 1;
@@ -2285,6 +2417,7 @@ function renderFleetBar(data) {
   for (const bot of bots) {
     const seg = document.createElement("div");
     seg.className = "fleetSeg";
+    seg.dataset.name = bot.displayName || bot.unit;
     const cls = statusDotClass(bot);
     seg.classList.add(cls);
     if (cls === "good") goodCount++;
@@ -3217,6 +3350,7 @@ function initDetailsUi() {
 }
 
 function openDetails(unit, { updateUrl = true } = {}) {
+  hideHoverPreview();
   if (!state.details.inited) initDetailsUi();
   if (!state.data) return null;
   const bot = (state.data && state.data.bots || []).find(b => b.unit === unit);
@@ -3586,6 +3720,22 @@ window.addEventListener("DOMContentLoaded", () => {
       if (e.target === shortcutsOverlay) hideShortcuts();
     });
   }
+
+  /* ── Page visibility: pause auto-refresh when hidden ── */
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      if (state.timer) clearInterval(state.timer);
+      state.timer = null;
+      stopCountdown();
+    } else if (state.auto) {
+      refresh();
+      state.timer = setInterval(() => {
+        refresh();
+        startCountdown();
+      }, REFRESH_INTERVAL);
+      startCountdown();
+    }
+  });
 
   updateSortHeaders();
   const autoStored = lsGet("auto", "1");
