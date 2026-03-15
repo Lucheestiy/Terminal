@@ -331,6 +331,25 @@ const I18N = {
     notif_enable: "Notifications",
     notif_enabled: "Notifications enabled",
     notif_denied: "Notifications blocked by browser",
+    sc_cmd_palette: "Command palette",
+    cmd_search_placeholder: "Search bots, actions\u2026",
+    cmd_no_results: "No results found",
+    cmd_group_bots: "Bots",
+    cmd_group_actions: "Actions",
+    cmd_group_quick: "Quick Actions",
+    cmd_refresh: "Refresh data",
+    cmd_export: "Export CSV",
+    cmd_notif: "Toggle notifications",
+    cmd_filter: "Focus filter",
+    cmd_shortcuts: "Keyboard shortcuts",
+    cmd_compact: "Toggle compact view",
+    cmd_stop: "Stop {name}",
+    cmd_restart: "Restart {name}",
+    cmd_start: "Start {name}",
+    cmd_logs: "View logs for {name}",
+    cmd_navigate: "navigate",
+    cmd_select: "select",
+    cmd_close: "close",
   },
   ru: {
     app_title: "Панель ботов",
@@ -529,6 +548,25 @@ const I18N = {
     notif_enable: "Уведомления",
     notif_enabled: "Уведомления включены",
     notif_denied: "Уведомления заблокированы браузером",
+    sc_cmd_palette: "Палитра команд",
+    cmd_search_placeholder: "Поиск ботов, действий\u2026",
+    cmd_no_results: "Ничего не найдено",
+    cmd_group_bots: "Боты",
+    cmd_group_actions: "Действия",
+    cmd_group_quick: "Быстрые действия",
+    cmd_refresh: "Обновить данные",
+    cmd_export: "Экспорт CSV",
+    cmd_notif: "Уведомления",
+    cmd_filter: "Фокус на фильтр",
+    cmd_shortcuts: "Горячие клавиши",
+    cmd_compact: "Компактный вид",
+    cmd_stop: "Остановить {name}",
+    cmd_restart: "Перезапустить {name}",
+    cmd_start: "Запустить {name}",
+    cmd_logs: "Логи {name}",
+    cmd_navigate: "навигация",
+    cmd_select: "выбрать",
+    cmd_close: "закрыть",
   },
 };
 
@@ -2780,6 +2818,7 @@ function showShortcuts() {
   const grid = $("shortcutsGrid");
   if (grid) {
     const shortcuts = [
+      { keys: ["\u2318K / Ctrl+K"], desc: t("sc_cmd_palette") },
       { keys: ["Enter", "Click"], desc: t("sc_open_details") },
       { keys: ["Esc"], desc: t("sc_close") },
       { keys: ["\u2190 / K", "\u2192 / J"], desc: t("sc_prev_next") },
@@ -3890,8 +3929,256 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  /* ── Command Palette ── */
+  const cmdPalette = $("cmdPalette");
+  const cmdPaletteBg = $("cmdPaletteBg");
+  const cmdPaletteInput = $("cmdPaletteInput");
+  const cmdPaletteResults = $("cmdPaletteResults");
+
+  let cmdActiveIdx = 0;
+  let cmdItems = [];
+
+  function openCmdPalette() {
+    if (!cmdPalette) return;
+    cmdPalette.hidden = false;
+    document.body.classList.add("modalOpen");
+    cmdPaletteInput.value = "";
+    cmdActiveIdx = 0;
+    renderCmdResults("");
+    setTimeout(() => cmdPaletteInput.focus(), 50);
+  }
+
+  function closeCmdPalette() {
+    if (!cmdPalette) return;
+    cmdPalette.hidden = true;
+    document.body.classList.remove("modalOpen");
+  }
+
+  function fuzzyMatch(query, text) {
+    if (!query) return { match: true, score: 0, indices: [] };
+    const q = query.toLowerCase();
+    const t = text.toLowerCase();
+    // Simple substring match with position tracking
+    const idx = t.indexOf(q);
+    if (idx >= 0) {
+      const indices = [];
+      for (let i = idx; i < idx + q.length; i++) indices.push(i);
+      return { match: true, score: idx === 0 ? 100 : 80, indices };
+    }
+    // Character-by-character fuzzy
+    let qi = 0;
+    const indices = [];
+    let score = 0;
+    for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+      if (t[ti] === q[qi]) {
+        indices.push(ti);
+        score += (ti === 0 || t[ti - 1] === " " || t[ti - 1] === "-" || t[ti - 1] === "_") ? 10 : 5;
+        qi++;
+      }
+    }
+    if (qi === q.length) return { match: true, score, indices };
+    return { match: false, score: 0, indices: [] };
+  }
+
+  function highlightFuzzy(text, indices) {
+    if (!indices.length) return escapeHtml(text);
+    const chars = [...text];
+    const set = new Set(indices);
+    let out = "";
+    let inMark = false;
+    for (let i = 0; i < chars.length; i++) {
+      if (set.has(i) && !inMark) { out += "<mark>"; inMark = true; }
+      else if (!set.has(i) && inMark) { out += "</mark>"; inMark = false; }
+      out += escapeHtml(chars[i]);
+    }
+    if (inMark) out += "</mark>";
+    return out;
+  }
+
+  function renderCmdResults(query) {
+    if (!cmdPaletteResults) return;
+    const q = String(query || "").trim();
+    const bots = state.data ? (state.data.bots || []) : [];
+    cmdItems = [];
+
+    // Bot results
+    const botResults = [];
+    for (const bot of bots) {
+      const name = bot.displayName || bot.unit;
+      const searchText = [name, bot.telegramHandle, bot.unit, bot.type, bot.profile].filter(Boolean).join(" ");
+      const m = fuzzyMatch(q, searchText);
+      if (!m.match) continue;
+      const nameMatch = fuzzyMatch(q, name);
+      botResults.push({ bot, score: m.score, nameMatch });
+    }
+    botResults.sort((a, b) => b.score - a.score);
+
+    // Quick actions
+    const actions = [
+      { icon: "\u{1F504}", name: t("cmd_refresh"), meta: "R", action: () => { closeCmdPalette(); refresh(); } },
+      { icon: "\u{1F4E6}", name: t("cmd_export"), meta: "CSV", action: () => { closeCmdPalette(); exportCsv(); } },
+      { icon: "\u{1F514}", name: t("cmd_notif"), meta: "N", action: () => { closeCmdPalette(); requestNotifications(); } },
+      { icon: "\u{1F50D}", name: t("cmd_filter"), meta: "/", action: () => { closeCmdPalette(); const fi = $("filterInput"); if (fi) fi.focus(); } },
+      { icon: "\u{2328}", name: t("cmd_shortcuts"), meta: "?", action: () => { closeCmdPalette(); showShortcuts(); } },
+      { icon: "\u{1F4CB}", name: t("cmd_compact"), meta: "", action: () => { closeCmdPalette(); setViewCompact(!state.viewCompact); } },
+    ];
+
+    const filteredActions = q
+      ? actions.filter(a => fuzzyMatch(q, a.name + " " + a.meta).match)
+      : actions;
+
+    let html = "";
+
+    // Bots section
+    if (botResults.length) {
+      html += `<div class="cmdPaletteGroup"><div class="cmdPaletteGroupLabel">${escapeHtml(t("cmd_group_bots"))}</div>`;
+      const shown = botResults.slice(0, 8);
+      for (const { bot, nameMatch } of shown) {
+        const name = bot.displayName || bot.unit;
+        const dotCls = statusDotClass(bot);
+        const nameHtml = nameMatch.match && nameMatch.indices.length ? highlightFuzzy(name, nameMatch.indices) : escapeHtml(name);
+        const meta = [bot.telegramHandle, bot.type].filter(Boolean).join(" \u2022 ");
+        const idx = cmdItems.length;
+        cmdItems.push({
+          type: "bot",
+          bot,
+          action: () => { closeCmdPalette(); openDetails(bot.unit); },
+        });
+        html += `
+          <div class="cmdPaletteItem${idx === cmdActiveIdx ? " cmdActive" : ""}" data-cmd-idx="${idx}">
+            <span class="cmdPaletteItemIcon"><span class="cmdPaletteItemDot ${dotCls}"></span></span>
+            <div class="cmdPaletteItemBody">
+              <div class="cmdPaletteItemName">${nameHtml}</div>
+              <div class="cmdPaletteItemMeta">${escapeHtml(meta)}</div>
+            </div>
+            <span class="cmdPaletteItemRight">${escapeHtml(fmtMoneyUsd(((bot.usage && bot.usage.windows && bot.usage.windows["24h"]) || {}).costUSD || 0))} 24h</span>
+          </div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Actions section
+    if (filteredActions.length) {
+      html += `<div class="cmdPaletteGroup"><div class="cmdPaletteGroupLabel">${escapeHtml(t("cmd_group_actions"))}</div>`;
+      for (const a of filteredActions) {
+        const idx = cmdItems.length;
+        cmdItems.push({ type: "action", action: a.action });
+        const nameHtml = q ? highlightFuzzy(a.name, fuzzyMatch(q, a.name).indices) : escapeHtml(a.name);
+        html += `
+          <div class="cmdPaletteItem${idx === cmdActiveIdx ? " cmdActive" : ""}" data-cmd-idx="${idx}">
+            <span class="cmdPaletteItemIcon">${a.icon}</span>
+            <div class="cmdPaletteItemBody">
+              <div class="cmdPaletteItemName">${nameHtml}</div>
+              <div class="cmdPaletteItemMeta">${escapeHtml(a.meta)}</div>
+            </div>
+          </div>`;
+      }
+      html += `</div>`;
+    }
+
+    // Per-bot quick actions (when query matches a bot clearly)
+    if (botResults.length === 1 || (botResults.length > 0 && botResults[0].score >= 80)) {
+      const topBot = botResults[0].bot;
+      const activeState = String(topBot.systemd && topBot.systemd.activeState || "");
+      const botActions = [];
+      const bName = topBot.displayName || topBot.unit;
+      if (activeState === "active") {
+        botActions.push({ icon: "\u{1F6D1}", name: t("cmd_stop", { name: bName }), action: () => { closeCmdPalette(); doAction(topBot.unit, "stop"); } });
+        botActions.push({ icon: "\u{1F504}", name: t("cmd_restart", { name: bName }), action: () => { closeCmdPalette(); doAction(topBot.unit, "restart"); } });
+      } else {
+        botActions.push({ icon: "\u{25B6}\u{FE0F}", name: t("cmd_start", { name: bName }), action: () => { closeCmdPalette(); doAction(topBot.unit, "start"); } });
+      }
+      botActions.push({ icon: "\u{1F4C4}", name: t("cmd_logs", { name: bName }), action: () => { closeCmdPalette(); openDetails(topBot.unit); setTimeout(() => { const btn = $("loadLogsBtn"); if (btn) btn.click(); }, 300); } });
+
+      html += `<div class="cmdPaletteGroup"><div class="cmdPaletteGroupLabel">${escapeHtml(t("cmd_group_quick"))}</div>`;
+      for (const a of botActions) {
+        const idx = cmdItems.length;
+        cmdItems.push({ type: "action", action: a.action });
+        html += `
+          <div class="cmdPaletteItem${idx === cmdActiveIdx ? " cmdActive" : ""}" data-cmd-idx="${idx}">
+            <span class="cmdPaletteItemIcon">${a.icon}</span>
+            <div class="cmdPaletteItemBody">
+              <div class="cmdPaletteItemName">${escapeHtml(a.name)}</div>
+            </div>
+          </div>`;
+      }
+      html += `</div>`;
+    }
+
+    if (!html) {
+      html = `<div class="cmdPaletteEmpty">${escapeHtml(t("cmd_no_results"))}</div>`;
+    }
+
+    cmdPaletteResults.innerHTML = html;
+
+    // Click handlers for items
+    for (const el of cmdPaletteResults.querySelectorAll("[data-cmd-idx]")) {
+      el.addEventListener("click", () => {
+        const idx = parseInt(el.dataset.cmdIdx, 10);
+        if (cmdItems[idx] && cmdItems[idx].action) cmdItems[idx].action();
+      });
+      el.addEventListener("mouseenter", () => {
+        cmdActiveIdx = parseInt(el.dataset.cmdIdx, 10);
+        updateCmdActive();
+      });
+    }
+  }
+
+  function updateCmdActive() {
+    if (!cmdPaletteResults) return;
+    for (const el of cmdPaletteResults.querySelectorAll(".cmdPaletteItem")) {
+      const idx = parseInt(el.dataset.cmdIdx, 10);
+      el.classList.toggle("cmdActive", idx === cmdActiveIdx);
+    }
+    // Scroll active into view
+    const active = cmdPaletteResults.querySelector(".cmdActive");
+    if (active) active.scrollIntoView({ block: "nearest" });
+  }
+
+  if (cmdPaletteInput) {
+    cmdPaletteInput.addEventListener("input", () => {
+      cmdActiveIdx = 0;
+      renderCmdResults(cmdPaletteInput.value);
+    });
+    cmdPaletteInput.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        cmdActiveIdx = Math.min(cmdActiveIdx + 1, cmdItems.length - 1);
+        updateCmdActive();
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        cmdActiveIdx = Math.max(cmdActiveIdx - 1, 0);
+        updateCmdActive();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (cmdItems[cmdActiveIdx] && cmdItems[cmdActiveIdx].action) {
+          cmdItems[cmdActiveIdx].action();
+        }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closeCmdPalette();
+      }
+    });
+  }
+
+  if (cmdPaletteBg) cmdPaletteBg.addEventListener("click", closeCmdPalette);
+  const cmdKBtn = $("cmdKBtn");
+  if (cmdKBtn) cmdKBtn.addEventListener("click", openCmdPalette);
+
   /* ── Global keyboard shortcuts ── */
   document.addEventListener("keydown", (e) => {
+    // Cmd/Ctrl+K opens command palette from anywhere
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      const palette = $("cmdPalette");
+      if (palette && !palette.hidden) closeCmdPalette();
+      else openCmdPalette();
+      return;
+    }
+
+    // Skip if command palette is open
+    if (cmdPalette && !cmdPalette.hidden) return;
+
     // Skip if inside input/select/textarea
     const tag = String(e.target && e.target.tagName || "").toLowerCase();
     if (tag === "input" || tag === "textarea" || tag === "select" || (e.target && e.target.isContentEditable)) return;

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bots Dashboard</title>
     <meta name="description" content="Bots dashboard: status, logs, and token/cost usage." />
-    <link rel="stylesheet" href="/styles.css?v=71" />
+    <link rel="stylesheet" href="/styles.css?v=72" />
           <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
@@ -28,6 +28,7 @@
           <div id="relativeTime" class="muted"></div>
         </div>
         <div class="controls">
+          <button id="cmdKBtn" class="btnCmdK" title="Command palette (Ctrl+K)">&#128269; Search… <kbd class="kbd">⌘K</kbd></button>
           <button id="notifBtn" class="btn btnNotif" title="Enable browser notifications">&#128276;</button>
           <a href="https://fast.lucheestiy.com/vision" class="btn btnVisionFast" title="Open Terminal" target="_blank">&#9889; Terminal</a>
           <select id="langSelect" class="select" aria-label="Language" data-i18n-aria-label="language">
@@ -287,6 +288,33 @@
     <div class="toastContainer" id="toastContainer"></div>
     <div id="hoverPreview" class="hoverPreview" hidden></div>
 
+    <!-- Command Palette -->
+    <div id="cmdPalette" class="cmdPalette" hidden>
+      <div class="cmdPaletteBg" id="cmdPaletteBg"></div>
+      <div class="cmdPaletteCard">
+        <div class="cmdPaletteInputWrap">
+          <span class="cmdPaletteIcon">&#128269;</span>
+          <input
+            id="cmdPaletteInput"
+            class="cmdPaletteInput"
+            type="text"
+            placeholder="Search bots, actions…"
+            data-i18n-placeholder="cmd_search_placeholder"
+            autocomplete="off"
+            autocapitalize="none"
+            spellcheck="false"
+          />
+          <kbd class="cmdPaletteKbd">Esc</kbd>
+        </div>
+        <div id="cmdPaletteResults" class="cmdPaletteResults"></div>
+        <div class="cmdPaletteFooter">
+          <span><kbd class="cmdPaletteKbd cmdPaletteKbdSmall">&#8593;&#8595;</kbd> <span data-i18n="cmd_navigate">navigate</span></span>
+          <span><kbd class="cmdPaletteKbd cmdPaletteKbdSmall">&#9166;</kbd> <span data-i18n="cmd_select">select</span></span>
+          <span><kbd class="cmdPaletteKbd cmdPaletteKbdSmall">Esc</kbd> <span data-i18n="cmd_close">close</span></span>
+        </div>
+      </div>
+    </div>
+
     <div id="shortcutsOverlay" class="shortcutsOverlay" hidden>
       <div class="shortcutsBg" id="shortcutsBg"></div>
       <div class="shortcutsCard">
@@ -298,6 +326,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=57"></script>
+    <script src="/app.js?v=58"></script>
   </body>
 </html>
