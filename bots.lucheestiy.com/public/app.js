@@ -2257,6 +2257,9 @@ function renderDetails(bot) {
 
   const entries = Object.entries(providers).sort((a, b) => (b[1].tokens || 0) - (a[1].tokens || 0));
   const totalProviderTokens = entries.reduce((sum, [, st]) => sum + (st.tokens || 0), 0);
+  const totalProviderCost = entries.reduce((sum, [, st]) => sum + (st.costUSD || 0), 0);
+  const costLabel = $("providersTotalCost");
+  if (costLabel) costLabel.textContent = entries.length ? `${fmtInt(totalProviderTokens)} ${t("tokens_word")} • ${fmtMoneyUsd(totalProviderCost)}` : "";
   if (!entries.length) {
     list.innerHTML = `<div class="muted">${escapeHtml(t("no_usage"))}</div>`;
   } else {
@@ -2305,6 +2308,15 @@ function renderDetails(bot) {
     searchInput.oninput = () => {
       state.details.logQuery = searchInput.value || "";
       if (logsPre.dataset.logsLoaded === "1") renderLogsView();
+    };
+    searchInput.onkeydown = (e) => {
+      if (e.key === "Escape" && searchInput.value) {
+        e.preventDefault();
+        e.stopPropagation();
+        searchInput.value = "";
+        state.details.logQuery = "";
+        if (logsPre.dataset.logsLoaded === "1") renderLogsView();
+      }
     };
   }
 
@@ -2705,11 +2717,9 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     if (e.key === "r" || e.key === "R") {
-      if (!isDetailOpen) {
-        e.preventDefault();
-        refresh();
-        return;
-      }
+      e.preventDefault();
+      refresh();
+      return;
     }
 
     if (e.key === "/") {

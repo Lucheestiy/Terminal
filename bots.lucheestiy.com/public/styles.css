@@ -334,6 +334,19 @@ tbody tr.rowStateTransition td:first-child::before{background:rgba(245,158,11,.8
   font-weight:650;
   letter-spacing:.2px;
 }
+.sectionTitleRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:8px;
+  margin-bottom:8px;
+}
+.sectionTitleRow .sectionTitle{margin:0}
+.sectionTitleMeta{
+  font-size:12px;
+  color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
 .detailChartsHeader{
   display:flex;
   justify-content:space-between;
@@ -346,6 +359,12 @@ tbody tr.rowStateTransition td:first-child::before{background:rgba(245,158,11,.8
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap:14px;
+  padding-top:14px;
+  border-top:1px solid rgba(35,49,66,.4);
+}
+.detailBottomGrid{
+  padding-top:14px;
+  border-top:1px solid rgba(35,49,66,.4);
 }
 .detailChartsHeader{grid-column:1 / -1}
 .detailCharts .chartWrap{margin:0}
