@@ -681,7 +681,16 @@ function showConfirm(message, { confirmLabel = null, confirmClass = "btnDanger" 
 
 function closeConfirm(result) {
   const modal = $("confirmModal");
-  if (modal) modal.hidden = true;
+  if (modal) {
+    modal.classList.add("modalClosing");
+    const onEnd = () => {
+      modal.removeEventListener("animationend", onEnd);
+      modal.classList.remove("modalClosing");
+      modal.hidden = true;
+    };
+    modal.addEventListener("animationend", onEnd);
+    setTimeout(onEnd, 250);
+  }
 
   const resolve = state.confirm.resolve;
   state.confirm.resolve = null;
@@ -830,6 +839,26 @@ function statusDotClass(bot) {
   return "bad";
 }
 
+/* ── Animated number counter ── */
+function animateNumber(el, from, to, duration, formatFn) {
+  if (!el || !Number.isFinite(from) || !Number.isFinite(to) || from === to) {
+    if (el) el.textContent = formatFn(to);
+    return;
+  }
+  const start = performance.now();
+  const diff = to - from;
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(1, elapsed / duration);
+    // Ease-out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = from + diff * eased;
+    el.textContent = formatFn(current);
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
 function renderSummary(data) {
   const s = data.totals || {};
   const div = $("summary");
@@ -855,23 +884,48 @@ function renderSummary(data) {
   const costTrend = calcTrend(dailyAll, "costUSD");
   const errorTrend = calcTrend(dailyAll, "errors");
 
-  const cards = [
-    { label: t("summary_bots"), value: fmtInt(s.botsTotal), sub: t("summary_bots_sub", { active: fmtInt(s.botsActive) }), spark: "", trend: "", klass: "" },
-    { label: t("summary_tokens24h"), value: fmtInt(s.tokens24h), sub: t("summary_tokens_sub", { requests: fmtInt(s.requests24h) }), spark: renderPillSparkline(dailyAll, "tokens", "rgba(94,234,212,.5)"), trend: trendHtml(tokenTrend), klass: "" },
-    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: t("summary_cost_sub"), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)"), trend: trendHtml(costTrend), klass: "" },
-    { label: t("summary_errors24h"), value: fmtInt(s.errors24h), sub: t("summary_errors_sub"), spark: renderPillSparkline(dailyAll, "errors", "rgba(251,113,133,.5)"), trend: trendHtml(errorTrend), klass: hasErrors ? "pillError" : "" },
+  const rawValues = [
+    { raw: s.botsTotal || 0, fmt: fmtInt },
+    { raw: s.tokens24h || 0, fmt: fmtInt },
+    { raw: s.cost24h || 0, fmt: fmtMoneyUsd },
+    { raw: s.errors24h || 0, fmt: fmtInt },
   ];
 
-  for (const c of cards) {
+  const cards = [
+    { label: t("summary_bots"), value: fmtInt(s.botsTotal), sub: t("summary_bots_sub", { active: fmtInt(s.botsActive) }), spark: "", trend: "", klass: "", key: "bots" },
+    { label: t("summary_tokens24h"), value: fmtInt(s.tokens24h), sub: t("summary_tokens_sub", { requests: fmtInt(s.requests24h) }), spark: renderPillSparkline(dailyAll, "tokens", "rgba(94,234,212,.5)"), trend: trendHtml(tokenTrend), klass: "", key: "tokens" },
+    { label: t("summary_cost24h"), value: fmtMoneyUsd(s.cost24h), sub: t("summary_cost_sub"), spark: renderPillSparkline(dailyAll, "costUSD", "rgba(96,165,250,.5)"), trend: trendHtml(costTrend), klass: "", key: "cost" },
+    { label: t("summary_errors24h"), value: fmtInt(s.errors24h), sub: t("summary_errors_sub"), spark: renderPillSparkline(dailyAll, "errors", "rgba(251,113,133,.5)"), trend: trendHtml(errorTrend), klass: hasErrors ? "pillError" : "", key: "errors" },
+  ];
+
+  // Read previous raw values for animation
+  const prevRaw = state._summaryRaw || {};
+
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i];
+    const rv = rawValues[i];
     const el = document.createElement("div");
     el.className = `pill ${c.klass || ""}`.trim();
     el.innerHTML = `
       <div class="pillLabel">${c.label}</div>
-      <div class="pillValue">${c.value}${c.trend || ""}</div>
+      <div class="pillValue"><span class="pillNum">${c.value}</span>${c.trend || ""}</div>
       <div class="pillSub">${c.sub || ""}</div>
-      ${c.spark || ""}
+      ${c.spark || '<div class="pillSparkline"></div>'}
     `;
     div.appendChild(el);
+
+    // Animate the number if it changed
+    const oldVal = prevRaw[c.key];
+    if (oldVal != null && oldVal !== rv.raw && Number.isFinite(oldVal)) {
+      const numEl = el.querySelector(".pillNum");
+      if (numEl) animateNumber(numEl, oldVal, rv.raw, 600, rv.fmt);
+    }
+  }
+
+  // Store raw values for next render
+  state._summaryRaw = {};
+  for (let i = 0; i < cards.length; i++) {
+    state._summaryRaw[cards[i].key] = rawValues[i].raw;
   }
 }
 
@@ -1064,6 +1118,9 @@ function renderBotsTable(data) {
     tbody.appendChild(tr);
   }
 
+  const shouldAnimate = !state._skipRowAnim;
+  let animIdx = 0;
+
   for (const { bot } of filtered) {
     const tr = document.createElement("tr");
     tr.classList.add("rowClickable");
@@ -1089,7 +1146,7 @@ function renderBotsTable(data) {
     const statusLabel = `${systemdActiveLabel(activeState)}${bot.systemd.subState ? " (" + systemdSubLabel(bot.systemd.subState) + ")" : ""}`;
     const issueHtml = primaryMsg
       ? `<div class="issueLine ${primarySev === "error" ? "bad" : "warn"}">${escapeHtml(primaryMsg)}</div>`
-      : "";
+      : `<div class="issueLine">&nbsp;</div>`;
 
     const nameParts = [];
     const pinStar = isPinned(bot.unit) ? "\u2605" : "\u2606";
@@ -1127,7 +1184,10 @@ function renderBotsTable(data) {
     if (canEnable) actionsDiv.appendChild(makeActionBtn(t("action_enable"), "btnGood", () => doAction(bot.unit, "enable")));
 
     actionsDiv.appendChild(makeActionBtn(t("action_details"), "btnDetails", () => toggleDetails(bot.unit)));
-    actionsTd.appendChild(actionsDiv);
+    const actionsWrap = document.createElement("div");
+    actionsWrap.className = "actionsWrap";
+    actionsWrap.appendChild(actionsDiv);
+    actionsTd.appendChild(actionsWrap);
 
     const errors24 = Number(usage24.errors) || 0;
     const restarts = Number(bot.systemd.nRestarts) || 0;
@@ -1144,13 +1204,13 @@ function renderBotsTable(data) {
 
     const isChecked = state.batch.has(bot.unit);
 
-    const uptimeHtml = `${renderUptimeBar(bot.systemd.uptimeSeconds)}${restarts > 0 ? `<div class="restartsBadge" title="${t("sd_restarts")}">\u21bb ${restarts}</div>` : ""}`;
-    const activityHtml = lastAct ? `<div class="activityLine" title="${escapeHtml(lastAct)}">${escapeHtml(relativeTime(lastAct))}</div>` : "";
+    const uptimeHtml = `${renderUptimeBar(bot.systemd.uptimeSeconds)}${restarts > 0 ? `<div class="restartsBadge" title="${t("sd_restarts")}">\u21bb ${restarts}</div>` : `<div class="restartsBadge">&nbsp;</div>`}`;
+    const activityHtml = lastAct ? `<div class="activityLine" title="${escapeHtml(lastAct)}">${escapeHtml(relativeTime(lastAct))}</div>` : `<div class="activityLine">&nbsp;</div>`;
 
     const usageParts = [];
     usageParts.push(`<span class="usageToken">${fmtInt(usage24.tokens)} tok</span>`);
     usageParts.push(`<span class="usageCost">${fmtMoneyUsd(usage24.costUSD)}</span>`);
-    if (errors24 > 0) usageParts.push(`<span class="usageErr">${fmtInt(errors24)} err</span>`);
+    usageParts.push(errors24 > 0 ? `<span class="usageErr">${fmtInt(errors24)} err</span>` : `<span class="usageErr">&nbsp;</span>`);
 
     const sparkHtml = renderFullWidthSparklines(hourly24h, daily30d);
 
@@ -1159,12 +1219,17 @@ function renderBotsTable(data) {
 
     tr.innerHTML = `
       <td style="width:32px;padding-right:0;vertical-align:middle" rowspan="2"><input type="checkbox" class="rowCheckbox" data-unit="${escapeHtml(bot.unit)}" ${isChecked ? "checked" : ""} /></td>
-      <td>${nameParts.join("")}</td>
-      <td><span class="statusDot ${dotClass}"></span>${enabledBadgeHtml(bot.systemd.unitFileState)}${issueHtml}</td>
-      <td>${uptimeHtml}${activityHtml}</td>
-      <td class="num usageCell">${usageParts.join(" ")}</td>
+      <td><div class="cellClip">${nameParts.join("")}</div></td>
+      <td><div class="cellClip"><span class="statusDot ${dotClass}"></span>${enabledBadgeHtml(bot.systemd.unitFileState)}${issueHtml}</div></td>
+      <td><div class="cellClip">${uptimeHtml}${activityHtml}</div></td>
+      <td class="num usageCell"><div class="cellClip">${usageParts.join(" ")}</div></td>
     `;
     tr.appendChild(actionsTd);
+    if (shouldAnimate && animIdx < 12) {
+      tr.classList.add("rowAnimIn");
+      tr.style.animationDelay = `${animIdx * 30}ms`;
+    }
+    animIdx++;
     tbody.appendChild(tr);
 
     // Sparkline sub-row (spans under all data columns, left of actions)
@@ -1175,6 +1240,10 @@ function renderBotsTable(data) {
     if (tr.classList.contains("rowPinned")) sparkTr.classList.add("rowPinned");
     if (tr.classList.contains("rowRecentActivity")) sparkTr.classList.add("rowRecentActivity");
     sparkTr.innerHTML = `<td colspan="4" class="sparkTd">${sparkHtml}</td>`;
+    if (shouldAnimate && animIdx <= 13) {
+      sparkTr.classList.add("rowAnimIn");
+      sparkTr.style.animationDelay = `${(animIdx - 1) * 30}ms`;
+    }
     sparkTr.addEventListener("click", () => toggleDetails(bot.unit));
     tbody.appendChild(sparkTr);
 
@@ -1735,6 +1804,7 @@ function showToast(title, msg, { type = "info", duration = 4000 } = {}) {
   const icons = { good: "\u2705", bad: "\u274C", warn: "\u26A0\uFE0F", info: "\u2139\uFE0F" };
   const el = document.createElement("div");
   el.className = `toast toast${type.charAt(0).toUpperCase() + type.slice(1)}`;
+  const progressHtml = duration > 0 ? `<div class="toastProgress"><div class="toastProgressBar" style="--toast-duration:${duration}ms"></div></div>` : "";
   el.innerHTML = `
     <span class="toastIcon">${icons[type] || icons.info}</span>
     <div class="toastBody">
@@ -1742,6 +1812,7 @@ function showToast(title, msg, { type = "info", duration = 4000 } = {}) {
       ${msg ? `<div class="toastMsg">${escapeHtml(msg)}</div>` : ""}
     </div>
     <button class="toastClose">&times;</button>
+    ${progressHtml}
   `;
   container.appendChild(el);
 
@@ -3121,8 +3192,18 @@ function closeDetails({ updateUrl = true } = {}) {
   setFollowLogs(false);
 
   const modal = $("detailModal");
-  if (modal) modal.hidden = true;
-  document.body.classList.remove("modalOpen");
+  if (modal) {
+    modal.classList.add("modalClosing");
+    const onEnd = () => {
+      modal.removeEventListener("animationend", onEnd);
+      modal.classList.remove("modalClosing");
+      modal.hidden = true;
+      document.body.classList.remove("modalOpen");
+    };
+    modal.addEventListener("animationend", onEnd);
+    // Safety fallback in case animationend doesn't fire
+    setTimeout(onEnd, 250);
+  }
 
   state.selectedUnit = null;
   if (state.data) renderBotsTable(state.data);
@@ -3168,8 +3249,12 @@ async function refresh() {
     detectStatusChanges(state.data, data);
 
     state.prevData = state.data;
+    const isFirstLoad = !state.data;
     state.data = data;
     setConnStatus(true);
+
+    // Skip row animation on auto-refresh (only animate on first load/filter changes)
+    if (!isFirstLoad) state._skipRowAnim = true;
 
     renderHeader(data);
 
@@ -3177,6 +3262,7 @@ async function refresh() {
     renderFleetBar(data);
     renderFilterChips(data);
     renderBotsTable(data);
+    state._skipRowAnim = false;
 
     if (state.selectedUnit) {
       const still = (data.bots || []).find(b => b.unit === state.selectedUnit);
@@ -3213,6 +3299,20 @@ function setAuto(on) {
   }
   const ringEl = $("countdownRing");
   if (ringEl) ringEl.style.display = on ? "" : "none";
+}
+
+/* ── Sort header indicators ── */
+function updateSortHeaders() {
+  const current = state.ui.sort || "name";
+  for (const th of document.querySelectorAll("th[data-sort]")) {
+    const key = th.dataset.sort;
+    const base = key.replace(/_(asc|desc)$/, "");
+    const currentBase = current.replace(/_(asc|desc)$/, "");
+    const isActive = base === currentBase;
+    th.classList.toggle("sortActive", isActive);
+    th.classList.toggle("sortDesc", isActive && current.endsWith("_desc"));
+    th.classList.toggle("sortAsc", isActive && !current.endsWith("_desc"));
+  }
 }
 
 /* ── Loading Skeleton ── */
@@ -3299,6 +3399,32 @@ window.addEventListener("DOMContentLoaded", () => {
     sortSelect.addEventListener("change", () => {
       state.ui.sort = sortSelect.value || "name";
       lsSet("sort", state.ui.sort);
+      if (state.data) renderBotsTable(state.data);
+    });
+  }
+
+  /* ── Sortable column headers ── */
+  for (const th of document.querySelectorAll("th[data-sort]")) {
+    th.addEventListener("click", () => {
+      const sortKey = th.dataset.sort;
+      if (!sortKey) return;
+      // Toggle direction if clicking the same column
+      if (state.ui.sort === sortKey) {
+        // Already sorting by this — toggle between asc/desc variant
+        if (sortKey.endsWith("_desc")) {
+          state.ui.sort = sortKey.replace(/_desc$/, "_asc");
+        } else if (sortKey.endsWith("_asc")) {
+          state.ui.sort = sortKey.replace(/_asc$/, "_desc");
+        } else {
+          // "name" sort — just keep it
+          state.ui.sort = sortKey;
+        }
+      } else {
+        state.ui.sort = sortKey;
+      }
+      lsSet("sort", state.ui.sort);
+      if (sortSelect) sortSelect.value = state.ui.sort;
+      updateSortHeaders();
       if (state.data) renderBotsTable(state.data);
     });
   }
@@ -3404,6 +3530,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  updateSortHeaders();
   const autoStored = lsGet("auto", "1");
   setAuto(autoStored !== "0");
   refresh();

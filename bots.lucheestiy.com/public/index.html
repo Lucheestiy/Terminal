@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bots Dashboard</title>
     <meta name="description" content="Bots dashboard: status, logs, and token/cost usage." />
-    <link rel="stylesheet" href="/styles.css?v=54" />
+    <link rel="stylesheet" href="/styles.css?v=68" />
           <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
@@ -27,8 +27,6 @@
           <div id="relativeTime" class="muted"></div>
         </div>
         <div class="controls">
-          <a href="/vision.html" class="btn btnVisionFast" title="Open Vision (fast)" target="_blank">⚡ Vision</a>
-          <a href="/vision-legacy.html" class="btn btnVision" title="Open Vision (legacy)" target="_blank">✨ Vision (legacy)</a>
           <a href="https://fast.lucheestiy.com/vision" class="btn btnVisionFast" title="Open Terminal" target="_blank">⚡ Terminal</a>
           <select id="langSelect" class="select" aria-label="Language" data-i18n-aria-label="language">
             <option value="en">EN</option>
@@ -105,10 +103,10 @@
             <thead>
               <tr>
                 <th style="width:32px;padding-right:0"><input type="checkbox" class="rowCheckbox" id="selectAllCheckbox" title="Select all" /></th>
-                <th data-i18n="th_bot">Bot</th>
+                <th data-i18n="th_bot" data-sort="name" class="sortable">Bot</th>
                 <th data-i18n="th_status">Status</th>
-                <th data-i18n="th_uptime">Uptime</th>
-                <th class="num" data-i18n="th_tokens24h">Usage (24h)</th>
+                <th data-i18n="th_uptime" data-sort="uptime_desc" class="sortable">Uptime</th>
+                <th class="num sortable" data-i18n="th_tokens24h" data-sort="tokens24h_desc">Usage (24h)</th>
                 <th data-i18n="th_actions">Actions</th>
               </tr>
             </thead>
@@ -295,6 +293,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=49"></script>
+    <script src="/app.js?v=54"></script>
   </body>
 </html>
