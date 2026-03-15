@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Bots Dashboard</title>
     <meta name="description" content="Bots dashboard: status, logs, and token/cost usage." />
-    <link rel="stylesheet" href="/styles.css?v=45" />
+    <link rel="stylesheet" href="/styles.css?v=46" />
           <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2">
@@ -208,6 +208,14 @@
             </div>
 
             <div class="detailBlock detailBlockFull">
+              <div class="sectionTitleRow">
+                <h3 class="sectionTitle" id="fieldGuideTitle">Field Guide</h3>
+                <button id="fieldGuideToggle" class="btn btnSecondary btnSmall">Expand</button>
+              </div>
+              <div id="fieldGuideBox" class="fieldGuide" hidden></div>
+            </div>
+
+            <div class="detailBlock detailBlockFull">
               <h3 class="sectionTitle" data-i18n="unit_details">Unit details</h3>
               <div id="unitDetailsActions" class="controls unitDetailsActions"></div>
               <div id="unitDetailsBox" class="infoBox"></div>
@@ -219,6 +227,7 @@
                 <button id="loadLogsBtn" class="btn btnSecondary" data-i18n="load_logs">Load logs</button>
                 <button id="followLogsBtn" class="btn btnFollow" data-i18n="follow_logs" title="Auto-refresh logs every 5s">Follow</button>
                 <button id="copyLogsBtn" class="btn btnSecondary" data-i18n="copy">Copy</button>
+                <button id="downloadLogsBtn" class="btn btnSecondary" title="Download logs">↓</button>
                 <label class="checkboxLabel" title="Auto-load logs on open" data-i18n-title="auto_load_logs_title">
                   <input type="checkbox" id="autoLoadLogs" class="checkbox" />
                   <span data-i18n="auto_load_logs">Auto</span>
@@ -280,6 +289,6 @@
       </div>
     </div>
 
-    <script src="/app.js?v=39"></script>
+    <script src="/app.js?v=40"></script>
   </body>
 </html>
